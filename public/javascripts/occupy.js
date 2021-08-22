@@ -170,18 +170,15 @@ $(document).ready(() => {
             clearInterval(timer)
             $('#timer').text($('#timer').text() + ' [종료]')
         })
-
+        socket.on('turn', () => {
+            alert('아무 말')
+        })
         $(document).on('click', 'path', function(){
 
             if(states[$(this).index()][1]){
                 myScore+=states[$(this).index()][1]
             }
-            turncount += 1
-            if(turncount==2){
-                turn += 1
-                turncount = 0
-            }
-            console.log(turn)
+            socket.emit('turn')
 
             $('#current').text(`클릭: ${this.id}`)
             console.log(myScore)
