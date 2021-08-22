@@ -178,6 +178,7 @@ $(document).ready(() => {
             if(states[$(this).index()][1]){
                 myScore+=states[$(this).index()][1]
             }
+            
             socket.emit('turn')
 
             $('#current').text(`클릭: ${this.id}`)
