@@ -51,7 +51,7 @@ socket.on('leaveUser', (id) => leaveUser(id))
 let qNumList = []
 
 $(document).ready(() => {
-    $('main, #timer, #turn').hide()
+    $('main, #timer').hide()
 
     $('#colorpicker').farbtastic('#color')
 
@@ -111,7 +111,7 @@ $(document).ready(() => {
     let myScore = 0
     let opScore = 0
     let turn = 1
-    let myTurn = false
+    let myTurn = true
 
     request.onload = function() {
         request.response.features.forEach(element => states.push([element.properties.A2, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_3)]))
@@ -186,7 +186,8 @@ $(document).ready(() => {
             socket.emit('turnEnd')
             socket.emit('turn')
             socket.emit('correct', myId, $(this).index())
-            $('#turn').hide()   
+            myTurn = false
+            $('#turn').hide() 
 }
             socket.emit('turnEnd')
             socket.emit('turn')
