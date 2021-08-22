@@ -110,6 +110,8 @@ $(document).ready(() => {
     let qNum
     let myScore = 0
     let opScore = 0
+    let turn = 1
+    let turncount = 0
 
     request.onload = function() {
         request.response.features.forEach(element => states.push([element.properties.A2, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_3)]))
@@ -135,7 +137,7 @@ $(document).ready(() => {
             $('main, #timer').show()
 
             second = 0, minute = 0
-            timer = setInterval(timeUpdate, 1000)
+            //timer = setInterval(timeUpdate, 1000)
         })
 
         socket.on('newQuestion', (num) => {
@@ -160,7 +162,7 @@ $(document).ready(() => {
 
         socket.on('myCorrect', (index) => {
             opScore++
-            $('#score').text(`내 점수: ${myScore} | 상대 점수 : ${opScore}`)
+            $('#score').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} |`)
             // $(`#states path:eq(${index - 1})`).addClass('opCorrect')
         })
 
@@ -170,23 +172,20 @@ $(document).ready(() => {
         })
 
         $(document).on('click', 'path', function(){
-            $('#current').text(`클릭: ${this.id}`)
-            if (this.id === states[qNum]) {
-                myScore++
-                $('#score').text(`내 점수: ${myScore} | 상대 점수 : ${opScore}`)
-                // alert('정답')
-                // $(this).toggleClass('correct')
-                $(this).css('fill', playerMap[myId].color).removeClass('hint')
 
-                socket.emit('correct', myId, $(this).index())
-                socket.emit('newQuestion', states)
-
-            } else {
-                // alert('오답')
-                $(this).removeClass('hint')
-                $(this).addClass('wrong')
-                socket.emit('wrong', states)
+            if(states[$(this).index()][1]){
+                myScore+=states[$(this).index()][1]
             }
+            turncount += 1
+            if(turncount==2){
+                turn += 1
+                turncount = 0
+            }
+            console.log(turn)
+
+            $('#current').text(`클릭: ${this.id}`)
+            console.log(myScore)
+            $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
         })
     }
 })
