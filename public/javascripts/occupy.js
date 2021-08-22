@@ -51,7 +51,7 @@ socket.on('leaveUser', (id) => leaveUser(id))
 let qNumList = []
 
 $(document).ready(() => {
-    $('main, #timer').hide()
+    $('main, #timer, #turn').hide()
 
     $('#colorpicker').farbtastic('#color')
 
@@ -111,7 +111,7 @@ $(document).ready(() => {
     let myScore = 0
     let opScore = 0
     let turn = 1
-    let turncount = 0
+    let myTurn = false
 
     request.onload = function() {
         request.response.features.forEach(element => states.push([element.properties.A2, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_3)]))
@@ -171,16 +171,25 @@ $(document).ready(() => {
             $('#timer').text($('#timer').text() + ' [종료]')
         })
         socket.on('turn', () => {
-            alert('아무 말')
+            turn++
+        })
+            socket.on('turnEnd', () => {
+            $('#turn').show()
+            myTurn = true
         })
         $(document).on('click', 'path', function(){
 
+            if (myTurn == true) {
             if(states[$(this).index()][1]){
                 myScore+=states[$(this).index()][1]
             }
-            
+            socket.emit('turnEnd')
             socket.emit('turn')
-
+            socket.emit('correct', myId, $(this).index())
+            $('#turn').hide()   
+}
+            socket.emit('turnEnd')
+            socket.emit('turn')
             $('#current').text(`클릭: ${this.id}`)
             console.log(myScore)
             $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)

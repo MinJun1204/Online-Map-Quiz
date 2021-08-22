@@ -68,7 +68,7 @@ app.io.on('connection', (socket) => {
   })
 
   socket.on('turn', () => app.io.emit('turn'))  
-
+  socket.on('turnEnd', () => socket.broadcast.emit('turnEnd'))
   socket.on('newQuestion', (states) => newQuestion(states))
 
   socket.on('wrong', (states) => {
