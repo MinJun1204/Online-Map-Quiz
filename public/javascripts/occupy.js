@@ -201,7 +201,6 @@ $(document).ready(() => {
 function newQuestion(states) {
     if (qNumList.length === states.length) {
         $('#question').text('종료')
-        
         return
     }
 
