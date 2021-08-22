@@ -184,7 +184,7 @@ $(document).ready(() => {
                 myScore+=states[$(this).index()][1]
             }
             socket.emit('turnEnd')
-            socket.emit('turn')a
+            socket.emit('turn')
             socket.emit('correct', myId, $(this).index())
             myTurn = false
             $('#turn').hide() 
