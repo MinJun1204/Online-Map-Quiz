@@ -111,7 +111,7 @@ $(document).ready(() => {
     let myScore = 0
     let opScore = 0
     let turn = 1
-    let turncount = 0
+    let myTurn = true
 
     request.onload = function() {
         request.response.features.forEach(element => states.push([element.properties.A2, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_3)]))
@@ -170,19 +170,27 @@ $(document).ready(() => {
             clearInterval(timer)
             $('#timer').text($('#timer').text() + ' [종료]')
         })
-
+        socket.on('turn', () => {
+            turn++
+        })
+            socket.on('turnEnd', () => {
+            $('#turn').show()
+            myTurn = true
+        })
         $(document).on('click', 'path', function(){
 
+            if (myTurn == true) {
             if(states[$(this).index()][1]){
                 myScore+=states[$(this).index()][1]
             }
-            turncount += 1
-            if(turncount==2){
-                turn += 1
-                turncount = 0
-            }
-            console.log(turn)
-
+            socket.emit('turnEnd')
+            socket.emit('turn')
+            socket.emit('correct', myId, $(this).index())
+            myTurn = false
+            $('#turn').hide() 
+}
+            socket.emit('turnEnd')
+            socket.emit('turn')
             $('#current').text(`클릭: ${this.id}`)
             console.log(myScore)
             $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
@@ -193,7 +201,6 @@ $(document).ready(() => {
 function newQuestion(states) {
     if (qNumList.length === states.length) {
         $('#question').text('종료')
-        
         return
     }
 
