@@ -111,6 +111,7 @@ $(document).ready(() => {
     let myScore = 0
     let opScore = 0
     let turn = 1
+    let order = 0
     let myTurn = true
 
     request.onload = function() {
@@ -174,25 +175,35 @@ $(document).ready(() => {
             turn++
         })
             socket.on('turnEnd', () => {
+
             $('#turn').show()
             myTurn = true
         })
         $(document).on('click', 'path', function(){
-
             if (myTurn == true) {
-            if(states[$(this).index()][1]){
-                myScore+=states[$(this).index()][1]
+                order++
+
+                if (order == 1) {
+                    if (states[$(this).index()][1]) {
+                        myScore+=states[$(this).index()][1]
+                    }
+                    socket.emit('correct', myId, $(this).index())
+                    $('#turn').hide()
+                } else if (order == 2) {
+                    if (states[$(this).index()][1]) {
+                        myScore+=states[$(this).index()][1]
+                    }
+                    socket.emit('correct', myId, $(this).index())
+                    $('#turn').hide()
+
+                    myTurn = false
+                    order = 0
+                    socket.emit('turnEnd')
+                    socket.emit('turn')
+                }
             }
-            socket.emit('turnEnd')
-            socket.emit('turn')
-            socket.emit('correct', myId, $(this).index())
-            myTurn = false
-            $('#turn').hide() 
-}
-            socket.emit('turnEnd')
-            socket.emit('turn')
             $('#current').text(`클릭: ${this.id}`)
-            console.log(myScore)
+            console.log(order)
             $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
         })
     }
