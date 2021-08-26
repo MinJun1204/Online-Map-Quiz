@@ -95,7 +95,7 @@ $(document).ready(() => {
         $('#messages').append(`<li>[${playerMap[id].nickname}] ${msg}</li>`)
     })
 
-    let map = '/geojson/SIG.geojson'
+    let map = '/geojson/SIG Simplified.json'
     // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(EMD)/Incheon (EMD).geojson'
     // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(SIG)/Without Gu.geojson'
     let requestURL = map
