@@ -134,7 +134,7 @@ $(document).ready(() => {
 
         socket.on('start', () => {
             console.log(players, playerMap)
-            $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard ').hide()
+            $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question').hide()
             $('main, #timer').show()
 
             second = 0, minute = 0

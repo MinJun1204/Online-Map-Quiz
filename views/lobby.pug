@@ -1,0 +1,18 @@
+extends layout
+
+block content
+    h2 로비
+    p= `ID : ${id}`
+    button#logout 로그아웃
+
+    p 서버 접속자
+    ul#serverPlayer 
+    li 123
+
+    button#enter 게임 입장
+
+    script.
+        $(document).ready(() => {
+            $('#logout').click(() => location.href = '/logout')
+            $('#enter').click(() => location.href = '/game')
+        })
