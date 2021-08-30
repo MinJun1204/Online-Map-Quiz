@@ -10,6 +10,12 @@ function Player(id, color, nickname) {
     this.score = 0
 }
 
+function State(id, name, people) {
+    this.id = id
+    this.name = name
+    this.people = people
+}
+
 function joinUser(id, color, nickname) {
     let player = new Player(id, color, nickname)
 
@@ -48,18 +54,26 @@ socket.on('joinUser', (data) => {
 
 socket.on('leaveUser', (id) => leaveUser(id))
 
-let qNumList = []
+let url = '/geojson/SIG.geojson'
 
-$(document).ready(() => {
-    $('main, #timer').hide()
+function getMapData(url) {
+    return new Promise((resolve, reject) => {
+        $.getJSON(url, (response) => {
+            if (response) resolve(response)
+            else reject(new Error('Request failed'))
+        })
+    })
+}
 
-    $('#colorpicker').farbtastic('#color')
+function parseMapData(data) {
+    let states = []
+    let features = data.features
 
-    // Socket Test
-    // socket.emit('test', 'Hello')
-    // socket.on('test', (msg) => console.log(msg))
+    features.forEach((element, index) => states.push(new State(index, element.properties.도시지역_인구현황_시군구__20210821234950_field_5, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_6))))
+    return states
+}
 
-    // Nickname
+function customize() {
     $('#customize').submit((e) => {
         e.preventDefault()
         if ($('#nickname').val()) {
@@ -69,8 +83,9 @@ $(document).ready(() => {
             alert('닉네임을 입력하세요')
         }
     })
+}
 
-    // Chatting
+function chat() {
     $('#chat').submit((e) => {
         e.preventDefault()
         if ($('#chat input').val()) {
@@ -78,6 +93,23 @@ $(document).ready(() => {
             $('#chat input').val('')
         }
     })
+}
+
+function timeUpdate() {
+    second++
+    if (second >= 60) {
+        minute++
+        second = 0
+    }
+    $('#timer').text(`${minute}:${second}`)
+}
+
+async function game() {
+    $('main, #timer').hide()
+    $('#colorpicker').farbtastic('#color')
+
+    customize()
+    chat()    
 
     socket.on('customize', (id, nickname, color) => {
         if (id === myId)
@@ -95,17 +127,8 @@ $(document).ready(() => {
         $('#messages').append(`<li>[${playerMap[id].nickname}] ${msg}</li>`)
     })
 
-    let map = '/geojson/SIG.geojson'
-    // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(EMD)/Incheon (EMD).geojson'
-    // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(SIG)/Without Gu.geojson'
-    let requestURL = map
-    let request = new XMLHttpRequest()
-    request.open('GET', requestURL)
-    request.responseType = 'json'
-    request.send()
-
     let timer
-    let states = []
+    // let states = []
     let neighbors = []
     let qNum
     let myScore = 0
@@ -114,124 +137,96 @@ $(document).ready(() => {
     let order = 0
     let myTurn = true
 
-    request.onload = function() {
-        request.response.features.forEach(element => states.push([element.properties.A2, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_3)]))
-        // request.response.features.forEach(element => states.push(element.properties.KOR))
-        console.log('States : ', states)
+    let data = await getMapData(url)
+    let states = parseMapData(data)
+    console.log('States :', states)
 
-        request.response.features.forEach(element => {
-            if (element.properties.NEIGHBORS) { 
-                neighbors.push(element.properties.NEIGHBORS.split(','))
-            }
+    $('#start').click(() => {
+        socket.emit('start', states)
+    })
+
+    socket.on('start', () => {
+        console.log(players, playerMap)
+        $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question, label[for="modeSelect"]').hide()
+        $('main, #timer').show()
+
+        second = 0, minute = 0
+        //timer = setInterval(timeUpdate, 1000)
+    })
+
+    socket.on('newQuestion', (num) => {
+        qNum = num
+        $('#question').text(states[qNum])
+        $('path').removeClass('wrong').removeClass('hint')
+    })
+
+    socket.on('hint', hintList => {
+        hintList.forEach(index => {
+            $(`#states path:eq(${index})`).addClass('hint').removeClass('wrong')
         })
-                
-        console.log(neighbors)
+    })
 
-        // Game Start
-        $('#start').click(() => {
-            socket.emit('start', states)
-        })
+    socket.on('correct', (id, index) => {
+        playerMap[id].score++;
+        console.log(id, index)
 
-        socket.on('start', () => {
-            console.log(players, playerMap)
-            $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question').hide()
-            $('main, #timer').show()
+        $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
+        $(`#states path:eq(${index - 1})`).css('fill', playerMap[id].color).removeClass('hint')
+    })
 
-            second = 0, minute = 0
-            //timer = setInterval(timeUpdate, 1000)
-        })
+    socket.on('myCorrect', (index) => {
+        opScore++
+        $('#score').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} |`)
+        // $(`#states path:eq(${index - 1})`).addClass('opCorrect')
+    })
 
-        socket.on('newQuestion', (num) => {
-            qNum = num
-            $('#question').text(states[qNum])
-            $('path').removeClass('wrong').removeClass('hint')
-        })
+    socket.on('end', () => {
+        clearInterval(timer)
+        $('#timer').text($('#timer').text() + ' [종료]')
+    })
+    socket.on('turn', () => {
+        turn++
+    })
+        socket.on('turnEnd', () => {
 
-        socket.on('hint', hintList => {
-            hintList.forEach(index => {
-                $(`#states path:eq(${index})`).addClass('hint').removeClass('wrong')
-            })
-        })
+        $('#turn').show()
+        myTurn = true
+    })
+    
+    $('#skip').click(() => {
+        socket.emit('turnEnd')
+        order = 0
+        myTurn = false
+        $('#turn').hide()
+    })
 
-        socket.on('correct', (id, index) => {
-            playerMap[id].score++;
-            console.log(id, index)
+    $(document).on('click', 'path', function(){
+        if (myTurn == true) {
+            order++
 
-            $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
-            $(`#states path:eq(${index - 1})`).css('fill', playerMap[id].color).removeClass('hint')
-        })
-
-        socket.on('myCorrect', (index) => {
-            opScore++
-            $('#score').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} |`)
-            // $(`#states path:eq(${index - 1})`).addClass('opCorrect')
-        })
-
-        socket.on('end', () => {
-            clearInterval(timer)
-            $('#timer').text($('#timer').text() + ' [종료]')
-        })
-        socket.on('turn', () => {
-            turn++
-        })
-            socket.on('turnEnd', () => {
-
-            $('#turn').show()
-            myTurn = true
-        })
-        $(document).on('click', 'path', function(){
-            if (myTurn == true) {
-                order++
-
-                if (order == 1) {
-                    if (states[$(this).index()][1]) {
-                        myScore+=states[$(this).index()][1]
-                    }
-                    socket.emit('correct', myId, $(this).index())
-                    $('#turn').hide()
-                } else if (order == 2) {
-                    if (states[$(this).index()][1]) {
-                        myScore+=states[$(this).index()][1]
-                    }
-                    socket.emit('correct', myId, $(this).index())
-                    $('#turn').hide()
-
-                    myTurn = false
-                    order = 0
-                    socket.emit('turnEnd')
-                    socket.emit('turn')
+            if (order == 1) {
+                if (states[$(this).index()][1]) {
+                    myScore+=states[$(this).index()][1]
                 }
+                socket.emit('correct', myId, $(this).index())
+                $('#turn').hide()
+            } else if (order == 2) {
+                if (states[$(this).index()][1]) {
+                    myScore+=states[$(this).index()][1]
+                }
+                socket.emit('correct', myId, $(this).index())
+                $('#turn').hide()
+
+                myTurn = false
+                order = 0
+                socket.emit('turnEnd')
+                socket.emit('turn')
             }
-            $('#current').text(`클릭: ${this.id}`)
-            console.log(order)
-            $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
-        })
-    }
-})
-
-function newQuestion(states) {
-    if (qNumList.length === states.length) {
-        $('#question').text('종료')
-        return
-    }
-
-    qNum = Math.floor(Math.random() * states.length)
-    while (qNumList.indexOf(qNum) >= 0) {
-        qNum = Math.floor(Math.random() * states.length)
-    }
-    qNumList.push(qNum)
-
-    $('#question').text(states[qNum])
-    $('path').removeClass('wrong').removeClass('hint')
-
-    return qNum
+        }
+        $('#current').text(`클릭: ${this.id}`)
+        console.log(order)
+        $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
+    })
 }
 
-function timeUpdate() {
-    second++
-    if (second >= 60) {
-        minute++
-        second = 0
-    }
-    $('#timer').text(`${minute}:${second}`)
-}
+$(document).ready(game)
