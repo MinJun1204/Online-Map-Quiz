@@ -1,7 +1,9 @@
 extends layout
 
 block content
-  nav
+  #cursor
+
+  section
     form#customize
       label 닉네임 입력 : 
       input#nickname(placeholder="닉네임")
@@ -12,7 +14,7 @@ block content
       #colorpicker
       button#nameSubmit 확인
 
-    #leaderboard 
+    //- #leaderboard 
       h3 리더보드
       table 
         thead
@@ -22,7 +24,6 @@ block content
             td 기록
             td 일시
   header
-    h2 Online Map Quiz
     h3#timer 00:00
     h3#turn 내 턴
     ul#players
@@ -57,7 +58,6 @@ block content
   
   main
     h3#question
-    p#current 클릭 : 
 
     button#skip SKIP
     br

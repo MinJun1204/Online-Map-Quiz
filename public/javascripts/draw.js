@@ -63,7 +63,7 @@ function drawMap(target) {
             .attr('id', function(d) {
                 // return d.properties.A2;
                 // return d.properties.PLACENAME;
-                return d.properties.도시지역_인구현황_시군구__20210821234950_field_5
+                return d.properties.id
             });
 
         
@@ -81,7 +81,7 @@ function drawMap(target) {
             .text(function(d) {
                 // return d.properties.A2;
                 // return d.properties.PLACENAME;
-                return d.properties.도시지역_인구현황_시군구__20210821234950_field_5
+                return d.properties.state
             });
         
     });

@@ -79,6 +79,8 @@ app.io.on('connection', (socket) => {
   socket.on('correct', (id, index) => app.io.emit('correct', id, index))
   socket.on('myCorrect', (index) => socket.broadcast.emit('myCorrect', index))
 
+  socket.on('refresh', (id, population) => app.io.emit('refresh', id, population))
+
   console.log(playerMap)
 })
 

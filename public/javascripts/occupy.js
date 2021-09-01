@@ -10,10 +10,9 @@ function Player(id, color, nickname) {
     this.score = 0
 }
 
-function State(id, name, people) {
-    this.id = id
+function State(name, population) {
     this.name = name
-    this.people = people
+    this.population = population
 }
 
 function joinUser(id, color, nickname) {
@@ -39,7 +38,7 @@ let socket = io()
 
 socket.on('userId', (data) => {
     myId = data
-    console.log(myId)
+    console.log('My ID :', myId)
 })
 socket.on('joinUser', (data) => {
     if (data.id == myId) {
@@ -69,7 +68,7 @@ function parseMapData(data) {
     let states = []
     let features = data.features
 
-    features.forEach((element, index) => states.push(new State(index, element.properties.도시지역_인구현황_시군구__20210821234950_field_5, parseInt(element.properties.도시지역_인구현황_시군구__20210821234950_field_6))))
+    features.forEach(element => states[element.properties.id] = new State(element.properties.state, parseInt(element.properties.population)))
     return states
 }
 
@@ -108,9 +107,6 @@ async function game() {
     $('main, #timer').hide()
     $('#colorpicker').farbtastic('#color')
 
-    customize()
-    chat()    
-
     socket.on('customize', (id, nickname, color) => {
         if (id === myId)
             $(`#${id}`).text(`${nickname} (나) : 0`)
@@ -128,6 +124,7 @@ async function game() {
     })
 
     let timer
+    
     // let states = []
     let neighbors = []
     let qNum
@@ -138,7 +135,13 @@ async function game() {
     let myTurn = true
 
     let data = await getMapData(url)
-    let states = parseMapData(data)
+    states = parseMapData(data)
+
+    special.forEach(e => {
+        states[e].special = true
+        $(`#${e}`).addClass('special')
+    })
+
     console.log('States :', states)
 
     $('#start').click(() => {
@@ -147,7 +150,7 @@ async function game() {
 
     socket.on('start', () => {
         console.log(players, playerMap)
-        $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question, label[for="modeSelect"]').hide()
+        $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question, label[for="modeSelect"], header br').hide()
         $('main, #timer').show()
 
         second = 0, minute = 0
@@ -167,11 +170,11 @@ async function game() {
     })
 
     socket.on('correct', (id, index) => {
-        playerMap[id].score++;
-        console.log(id, index)
+        // playerMap[id].score += states[index].population
+        console.log(id, index, playerMap[id].score)
 
-        $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
-        $(`#states path:eq(${index - 1})`).css('fill', playerMap[id].color).removeClass('hint')
+        // $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
+        $(`#${index}`).css('fill', playerMap[id].color).removeClass('hint, special')
     })
 
     socket.on('myCorrect', (index) => {
@@ -187,10 +190,16 @@ async function game() {
     socket.on('turn', () => {
         turn++
     })
-        socket.on('turnEnd', () => {
 
+    socket.on('turnEnd', () => {
         $('#turn').show()
         myTurn = true
+    })
+
+    socket.on('refresh', (id, population) => {
+        console.log('Refresh : ', id, population)
+        playerMap[id].score = population
+        $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
     })
     
     $('#skip').click(() => {
@@ -205,16 +214,35 @@ async function game() {
             order++
 
             if (order == 1) {
-                if (states[$(this).index()][1]) {
-                    myScore+=states[$(this).index()][1]
+                console.log(this.id)
+                myScore+=states[this.id].population
+
+                playerMap[myId].score += states[this.id].population
+                if (states[this.id].special) {
+                    playerMap[myId].score *= 1.1
+                    playerMap[myId].score = parseInt(playerMap[myId].score)
+
+                    if (states[this.id].name === '의성') {
+                        alert(`<의성 마늘>\n신웅이 신령스러운 쑥 한 타래와 마늘 20개를 주면서 이르기를 “너희들이 이것을 먹고 백일 동안 햇빛을 보지 아니하면 곧 사람이 될 것이다.”라고 하였다.\n\n-삼국유사-\n\n내가 가진 모든 도시에 턴당 생산 점수 +2% 부여`)
+                    }
                 }
-                socket.emit('correct', myId, $(this).index())
+
+                socket.emit('correct', myId, this.id)
+                socket.emit('refresh', myId, playerMap[myId].score)
+
                 $('#turn').hide()
             } else if (order == 2) {
-                if (states[$(this).index()][1]) {
-                    myScore+=states[$(this).index()][1]
+                myScore+=states[this.id].population
+
+                playerMap[myId].score += states[this.id].population
+                if (states[this.id].special) {
+                    playerMap[myId].score *= 1.1
+                    playerMap[myId].score = parseInt(playerMap[myId].score)
                 }
-                socket.emit('correct', myId, $(this).index())
+
+                socket.emit('correct', myId, this.id)
+                socket.emit('refresh', myId, playerMap[myId].score)
+
                 $('#turn').hide()
 
                 myTurn = false
@@ -223,10 +251,29 @@ async function game() {
                 socket.emit('turn')
             }
         }
-        $('#current').text(`클릭: ${this.id}`)
-        console.log(order)
-        $('#timer').text(`내 점수: ${myScore} | 상대 점수 : ${opScore} | 턴 : ${turn}`)
     })
 }
 
-$(document).ready(game)
+function preload() {
+    customize()
+    chat()  
+}
+
+function cursor() {
+    $(document).on('mouseover', 'path', (e) => {
+        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})`)
+        $(document).mousemove(e => {
+            $('#cursor').css('left', e.pageX).css('top', e.pageY)
+            $(e.target).css('cursor', 'none')
+        })
+    })
+}
+
+let states = []
+let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
+
+$(document).ready(() => {
+    game()
+    cursor()
+    preload()
+})
