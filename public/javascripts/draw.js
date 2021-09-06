@@ -2,12 +2,10 @@ $(document).ready(() => {
     drawMap('#container'); 
 })
 
-
-
 //지도 그리기
 function drawMap(target) {
-    var width = 1400; //지도의 넓이
-    var height = 650; //지도의 높이
+    var width = 1600; //지도의 넓이
+    var height = 900; //지도의 높이
     var initialScale = 30000; //확대시킬 값
     var initialX = -65700; //초기 위치값 X
     var initialY = 21500; //초기 위치값 Y

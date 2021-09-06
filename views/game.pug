@@ -23,11 +23,7 @@ block content
             td 지도
             td 기록
             td 일시
-  header
-    h3#timer 00:00
-    h3#turn 내 턴
-    ul#players
-
+  section#settings
     label(for="modeSelect") 모드 : 
     select#modeSelect
       option 지역 맞추기
@@ -49,22 +45,27 @@ block content
         option 리
       optgroup(label="전세계")
         option 아시아 국가 [43]
-        option 오세아니아
+        option 오세아니아 
         option 아프리카
         option 미국 주 [48]
 
     br
     button#start START
   
-  main
+  header
     h3#question
+
+    h3#timer 00:00
+    h3#turn 내 턴
+    ul#players
 
     button#skip SKIP
     br
 
+  main
     #container
 
-  footer
+  nav
     ul#messages
     form(id="chat", action="")
       input(autocomplete="off")

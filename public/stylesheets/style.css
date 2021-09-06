@@ -3,18 +3,66 @@
 
 * {
     font-family: 'Noto Sans KR', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+::-webkit-scrollbar {
+    width: 0;
 }
 
 body {
     margin: 0;
+    position: absolute;
+}
+
+header {
+    position: relative;
+    top: 0;
+    width: 100vw;
+    background-color: white;
+    opacity: 0.9;
+    z-index: 1;
+}
+
+main {
+    position: absolute;
+    top: 0;
+    z-index: -1;
+}
+
+nav {
+    float: right;
+    z-index: 100;
+    background-color: white;
+    clear: both;
+}
+
+nav * {
+    z-index: 100;
 }
 
 #container {
-    display: absolute;
-    width: 100%;
-    min-height: 700px;
-    float: left;
+    z-index: 1;
+}
+
+h3 {
     margin: 0;
+    display: inline-block;
+}
+
+ul {
+    display: inline-block;
+}
+
+li {
+    display: inline-block;
+}
+
+button#skip {
+    position: absolute;
+    right: 0;
 }
 
 .background {

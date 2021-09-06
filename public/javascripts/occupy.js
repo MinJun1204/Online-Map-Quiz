@@ -104,7 +104,7 @@ function timeUpdate() {
 }
 
 async function game() {
-    $('main, #timer').hide()
+    $('header, main, #question').hide()
     $('#colorpicker').farbtastic('#color')
 
     socket.on('customize', (id, nickname, color) => {
@@ -150,23 +150,11 @@ async function game() {
 
     socket.on('start', () => {
         console.log(players, playerMap)
-        $('h2, #start, #mapSelect, label[for="mapSelect"], #leaderboard, #modeSelect, #question, label[for="modeSelect"], header br').hide()
-        $('main, #timer').show()
+        $('#settings').hide()
+        $('header, main').show()
 
         second = 0, minute = 0
-        //timer = setInterval(timeUpdate, 1000)
-    })
-
-    socket.on('newQuestion', (num) => {
-        qNum = num
-        $('#question').text(states[qNum])
-        $('path').removeClass('wrong').removeClass('hint')
-    })
-
-    socket.on('hint', hintList => {
-        hintList.forEach(index => {
-            $(`#states path:eq(${index})`).addClass('hint').removeClass('wrong')
-        })
+        timer = setInterval(timeUpdate, 1000)
     })
 
     socket.on('correct', (id, index) => {
@@ -273,6 +261,7 @@ let states = []
 let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
 
 $(document).ready(() => {
+    $('#customize').hide()
     game()
     cursor()
     preload()
