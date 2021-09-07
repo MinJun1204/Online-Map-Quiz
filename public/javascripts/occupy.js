@@ -10,9 +10,10 @@ function Player(id, color, nickname) {
     this.score = 0
 }
 
-function State(name, population) {
+function State(name, population, color) {
     this.name = name
     this.population = population
+    this.color = color
 }
 
 function joinUser(id, color, nickname) {
@@ -67,8 +68,12 @@ function getMapData(url) {
 function parseMapData(data) {
     let states = []
     let features = data.features
+    let arr = []
 
-    features.forEach(element => states[element.properties.id] = new State(element.properties.state, parseInt(element.properties.population)))
+    features.forEach(element => states[element.properties.id] = new State(element.properties.state, parseInt(element.properties.population), `#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
+    // features.forEach(element => arr.push(`#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
+    features.forEach((element, idx) => console.log(`${element.properties.state} (${element.properties.population}): rgb(${255 - parseInt(element.properties.population / 3400)}, 255, 255)`))
+
     return states
 }
 
@@ -261,8 +266,20 @@ let states = []
 let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
 
 $(document).ready(() => {
-    $('#customize').hide()
     game()
     cursor()
     preload()
+
+    let toggle = false
+
+    $('#population').click(() => {
+        if (toggle) {
+            $('path').css('fill', '#ffffff')
+            toggle = true
+        } else {
+            states.forEach((element, idx) => $(`#${idx}`).css('fill', `rgb(${255 - parseInt(element.population / 3400)}, 255, 255)`))
+            toggle = false
+        }
+
+    })
 })
