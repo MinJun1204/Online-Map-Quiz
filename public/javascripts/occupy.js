@@ -53,8 +53,8 @@ socket.on('joinUser', (data) => {
 
 socket.on('leaveUser', (id) => leaveUser(id))
 
-let url = '/geojson/SIG.geojson'
-
+// let url = '/geojson/SIG.geojson'
+let url = '/geojson/US States.geojson'
 function getMapData(url) {
     return new Promise((resolve, reject) => {
         $.getJSON(url, (response) => {
@@ -137,10 +137,10 @@ async function game() {
     let data = await getMapData(url)
     states = parseMapData(data)
 
-    special.forEach(e => {
-        states[e].special = true
-        $(`#${e}`).addClass('special')
-    })
+    // special.forEach(e => {
+    //     states[e].special = true
+    //     $(`#${e}`).addClass('special')
+    // })
 
     console.log('States :', states)
 
