@@ -26,6 +26,10 @@ header {
     z-index: 1;
 }
 
+header * {
+    margin: 0 5px;
+}
+
 main {
     position: absolute;
     top: 0;
@@ -48,15 +52,14 @@ nav * {
 }
 
 h3 {
-    margin: 0;
     display: inline-block;
 }
 
-ul {
+ul#players {
     display: inline-block;
 }
 
-li {
+ul#players li {
     display: inline-block;
 }
 
@@ -80,6 +83,10 @@ button#skip {
 
 .special {
     fill: #ffedb8 !important;
+}
+
+.port {
+    fill: #a9f !important;
 }
 
 #states path {

@@ -7,7 +7,11 @@ function Player(id, color, nickname) {
     this.id = id
     this.nickname = nickname
     this.color = color
+    this.occupied = []
     this.score = 0
+    this.special = 0
+    this.port = 0
+    this.grow = 0
 }
 
 function State(name, population, color) {
@@ -41,14 +45,15 @@ socket.on('userId', (data) => {
     myId = data
     console.log('My ID :', myId)
 })
+
 socket.on('joinUser', (data) => {
     if (data.id == myId) {
-        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} (나) : 0</li>`)
+        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} (나) : 0 / 0 (0%)</li>`)
     } else {
-        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} : 0</li>`)
+        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} : 0 / 0 (0%)</li>`)
     }
 
-    console.log(data)
+    console.log('[Join User]', data)
     joinUser(data.id, data.color, data.nickname)
 })
 
@@ -68,11 +73,10 @@ function getMapData(url) {
 function parseMapData(data) {
     let states = []
     let features = data.features
-    let arr = []
 
     features.forEach(element => states[element.properties.id] = new State(element.properties.state, parseInt(element.properties.population), `#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
     // features.forEach(element => arr.push(`#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
-    features.forEach((element, idx) => console.log(`${element.properties.state} (${element.properties.population}): rgb(${255 - parseInt(element.properties.population / 3400)}, 255, 255)`))
+    // features.forEach((element, idx) => console.log(`${element.properties.state} (${element.properties.population}): rgb(${255 - parseInt(element.properties.population / 3400)}, 255, 255)`))
 
     return states
 }
@@ -96,6 +100,10 @@ function chat() {
             socket.emit('chat', myId, $('#chat input').val())
             $('#chat input').val('')
         }
+    })
+
+    $('#clear').click(() => {
+        $('#messages *').hide()
     })
 }
 
@@ -135,17 +143,21 @@ async function game() {
     let qNum
     let myScore = 0
     let opScore = 0
-    let turn = 1
     let order = 0
     let myTurn = true
 
     let data = await getMapData(url)
     states = parseMapData(data)
 
-    // special.forEach(e => {
-    //     states[e].special = true
-    //     $(`#${e}`).addClass('special')
-    // })
+    special.forEach(e => {
+        states[e].special = true
+        $(`#${e}`).addClass('special')
+    })
+
+    ports.forEach(e => {
+        states[e].port = true
+        $(`#${e}`).addClass('port')
+    })
 
     console.log('States :', states)
 
@@ -154,7 +166,7 @@ async function game() {
     })
 
     socket.on('start', () => {
-        console.log(players, playerMap)
+        console.log('[Players]', players, playerMap)
         $('#settings').hide()
         $('header, main').show()
 
@@ -164,10 +176,10 @@ async function game() {
 
     socket.on('correct', (id, index) => {
         // playerMap[id].score += states[index].population
-        console.log(id, index, playerMap[id].score)
+        console.log('[Occupied]', id, index, playerMap[id].score)
 
         // $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
-        $(`#${index}`).css('fill', playerMap[id].color).removeClass('hint, special')
+        $(`#${index}`).css('fill', playerMap[id].color).removeClass('special port')
     })
 
     socket.on('myCorrect', (index) => {
@@ -180,19 +192,37 @@ async function game() {
         clearInterval(timer)
         $('#timer').text($('#timer').text() + ' [종료]')
     })
-    socket.on('turn', () => {
-        turn++
-    })
 
     socket.on('turnEnd', () => {
         $('#turn').show()
         myTurn = true
+
+        let me = playerMap[myId]
+        me.score *= 1 + me.grow / 200
+        me.score = parseInt(me.score)
+
+        socket.emit('refresh', playerMap)
+
+        console.log('[Grow]', me.id, me.score)
     })
 
-    socket.on('refresh', (id, population) => {
-        console.log('Refresh : ', id, population)
-        playerMap[id].score = population
-        $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
+    socket.on('refresh', (_playerMap, index) => {
+        playerMap = _playerMap
+        // let player = playerMap[id]
+
+        for (let i in playerMap) {
+            let player = playerMap[i]
+            console.log('[Refresh]', player.id, player.score, player.occupied)
+
+            player.occupied.forEach(e => $(`#${e}`).css('fill', player.color).removeClass('special port'))
+            $(`#${player.id}`).text(`${player.nickname} : ${player.score} / ${player.special} / ${player.port} / (${player.grow}%)`)
+        }
+
+        // player.grow = player.special * player.port
+        // player.score *= 1 + player.grow / 100
+
+        // player.score += states[index].population
+        
     })
     
     $('#skip').click(() => {
@@ -203,45 +233,41 @@ async function game() {
     })
 
     $(document).on('click', 'path', function(){
+        let me = playerMap[myId]
+        
         if (myTurn == true) {
             order++
 
-            if (order == 1) {
-                console.log(this.id)
-                myScore+=states[this.id].population
+            console.log(`[Clicked] ${this.id} / Order ${order}`)
 
-                playerMap[myId].score += states[this.id].population
-                if (states[this.id].special) {
-                    playerMap[myId].score *= 1.1
-                    playerMap[myId].score = parseInt(playerMap[myId].score)
+            me.occupied.push(parseInt(this.id))
+            me.score += states[this.id].population
+            // me.score += states[this.id].population
 
-                    if (states[this.id].name === '의성') {
-                        alert(`<의성 마늘>\n신웅이 신령스러운 쑥 한 타래와 마늘 20개를 주면서 이르기를 “너희들이 이것을 먹고 백일 동안 햇빛을 보지 아니하면 곧 사람이 될 것이다.”라고 하였다.\n\n-삼국유사-\n\n내가 가진 모든 도시에 턴당 생산 점수 +2% 부여`)
-                    }
+            if (states[this.id].special) {
+                me.special += 1
+                // me.score *= 1.1
+                // me.score = parseInt(me.score)
+
+                if (states[this.id].name === '의성') {
+                    alert(`<의성 마늘>\n신웅이 신령스러운 쑥 한 타래와 마늘 20개를 주면서 이르기를 “너희들이 이것을 먹고 백일 동안 햇빛을 보지 아니하면 곧 사람이 될 것이다.”라고 하였다.\n\n-삼국유사-\n\n내가 가진 모든 도시에 턴당 생산 점수 +2% 부여`)
                 }
+            }
 
-                socket.emit('correct', myId, this.id)
-                socket.emit('refresh', myId, playerMap[myId].score)
+            if (states[this.id].port) {
+                me.port += 1
+            }
 
-                $('#turn').hide()
-            } else if (order == 2) {
-                myScore+=states[this.id].population
+            me.grow = me.special * me.port * 0.5
 
-                playerMap[myId].score += states[this.id].population
-                if (states[this.id].special) {
-                    playerMap[myId].score *= 1.1
-                    playerMap[myId].score = parseInt(playerMap[myId].score)
-                }
+            socket.emit('refresh', playerMap)
 
-                socket.emit('correct', myId, this.id)
-                socket.emit('refresh', myId, playerMap[myId].score)
+            $('#turn').hide()
 
-                $('#turn').hide()
-
+            if (order == 2) {
                 myTurn = false
                 order = 0
                 socket.emit('turnEnd')
-                socket.emit('turn')
             }
         }
     })
@@ -264,6 +290,7 @@ function cursor() {
 
 let states = []
 let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
+let ports = [50, 121, 181, 28, 185, 165, 204]
 
 $(document).ready(() => {
     game()
@@ -280,6 +307,5 @@ $(document).ready(() => {
             states.forEach((element, idx) => $(`#${idx}`).css('fill', `rgb(${255 - parseInt(element.population / 3400)}, 255, 255)`))
             toggle = false
         }
-
     })
 })
