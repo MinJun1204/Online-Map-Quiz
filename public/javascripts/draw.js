@@ -6,12 +6,12 @@ $(document).ready(() => {
 function drawMap(target) {
     var width = 1600; //지도의 넓이
     var height = 900; //지도의 높이
-    // var initialScale = 30000; //확대시킬 값
-    // var initialX = -65700; //초기 위치값 X
-    // var initialY = 21500; //초기 위치값 Y
-    let initialScale = 350
-    let initialX = 1200
-    let initialY = 500
+    var initialScale = 30000; //확대시킬 값
+    var initialX = -65700; //초기 위치값 X
+    var initialY = 21500; //초기 위치값 Y
+    // let initialScale = 350
+    // let initialX = 1200
+    // let initialY = 500
     var labels;
 
     var projection = d3.geo
@@ -47,8 +47,8 @@ function drawMap(target) {
 
     //geoJson데이터를 파싱하여 지도그리기
         // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(EMD)/Incheon (EMD).geojson'
-        // let map = '/geojson/SIG.geojson'
-        let map = '/geojson/US States.geojson'
+        let map = '/geojson/SIG.geojson'
+        // let map = '/geojson/US States.geojson'
         d3.json(map, function(json) {
         // d3.json('/geojson/AL_00_D001_20210703/AL_00_D001_20210703(SIG)/Without Gu.geojson', function(json) {
         // d3.json('/geojson/Asia.geojson', function(json) {

@@ -54,8 +54,8 @@ socket.on('joinUser', (data) => {
 
 socket.on('leaveUser', (id) => leaveUser(id))
 
-// let url = '/geojson/SIG.geojson'
-let url = '/geojson/US States.geojson'
+let url = '/geojson/SIG.geojson'
+// let url = '/geojson/US States.geojson'
 function getMapData(url) {
     return new Promise((resolve, reject) => {
         $.getJSON(url, (response) => {
