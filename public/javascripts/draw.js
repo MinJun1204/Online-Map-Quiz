@@ -59,6 +59,7 @@ function drawMap(target) {
             .enter()
             .append('path')
             .attr('d', path)
+            .attr('class', 'fog')
             .attr('id', function(d) {
                 // return d.properties.A2;
                 // return d.properties.PLACENAME;

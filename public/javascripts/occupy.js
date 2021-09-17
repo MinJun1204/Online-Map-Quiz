@@ -8,16 +8,21 @@ function Player(id, color, nickname) {
     this.nickname = nickname
     this.color = color
     this.occupied = []
+    this.neighbors = new Set()
+    this.inSight = new Set()
     this.score = 0
     this.special = 0
     this.port = 0
+    this.airport = 0
+    this.airportScore = 0
     this.grow = 0
 }
 
-function State(name, population, color) {
+function State(name, population, color, neighbors) {
     this.name = name
     this.population = population
     this.color = color
+    this.neighbors = neighbors
 }
 
 function joinUser(id, color, nickname) {
@@ -74,7 +79,12 @@ function parseMapData(data) {
     let states = []
     let features = data.features
 
-    features.forEach(element => states[element.properties.id] = new State(element.properties.state, parseInt(element.properties.population), `#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
+    features.forEach(element => {
+        let state = element.properties
+        let neighbors = state.neighbors.split(',').map(item => parseInt(item))
+        
+        states[state.id] = new State(state.state, parseInt(state.population), `#${parseInt(state.population / 3500).toString(16)}ffff`, neighbors)
+    })
     // features.forEach(element => arr.push(`#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
     // features.forEach((element, idx) => console.log(`${element.properties.state} (${element.properties.population}): rgb(${255 - parseInt(element.properties.population / 3400)}, 255, 255)`))
 
@@ -159,6 +169,11 @@ async function game() {
         $(`#${e}`).addClass('port')
     })
 
+    airports.forEach(e => {
+        states[e].airport = true
+        $(`#${e}`).addClass('airport')
+    })
+
     console.log('States :', states)
 
     $('#start').click(() => {
@@ -179,7 +194,7 @@ async function game() {
         console.log('[Occupied]', id, index, playerMap[id].score)
 
         // $(`#${id}`).text($(`#${id}`).text().split(':')[0] + ': ' + playerMap[id].score)
-        $(`#${index}`).css('fill', playerMap[id].color).removeClass('special port')
+        $(`#${index}`).css('fill', playerMap[id].color).removeClass('special port airport')
     })
 
     socket.on('myCorrect', (index) => {
@@ -200,10 +215,12 @@ async function game() {
         let me = playerMap[myId]
         me.score *= 1 + me.grow / 200
         me.score = parseInt(me.score)
+        me.airportScore += me.airport
+
 
         socket.emit('refresh', playerMap)
 
-        console.log('[Grow]', me.id, me.score)
+        console.log('[Grow]', me.id, me.score, me.airportScore)
     })
 
     socket.on('refresh', (_playerMap, index) => {
@@ -212,11 +229,28 @@ async function game() {
 
         for (let i in playerMap) {
             let player = playerMap[i]
-            console.log('[Refresh]', player.id, player.score, player.occupied)
+            
+            player.neighbors = new Set()
+            player.inSight = new Set()
 
-            player.occupied.forEach(e => $(`#${e}`).css('fill', player.color).removeClass('special port'))
-            $(`#${player.id}`).text(`${player.nickname} : ${player.score} / ${player.special} / ${player.port} / (${player.grow}%)`)
-        }
+            player.occupied.forEach(e => {
+                $(`#${e}`).css('fill', player.color).removeClass('special port airport').addClass('occupied')
+
+                states[e].neighbors.forEach(f => player.neighbors.add(f))
+            })
+
+            player.neighbors.forEach(e => {
+                states[e].neighbors.forEach(f => {
+                    player.inSight.add(f)
+                })
+            })
+
+            $(`#${player.id}`).text(`${player.nickname} : ${player.score} / ${player.special} / ${player.port} / (${player.grow}% / ${player.airport} / ${player.airportScore})`)
+        }   
+
+        playerMap[myId].neighbors.forEach(e => $(`#${e}`).removeClass('fog'))
+        
+        console.log('[Refresh]', playerMap)
 
         // player.grow = player.special * player.port
         // player.score *= 1 + player.grow / 100
@@ -258,6 +292,10 @@ async function game() {
                 me.port += 1
             }
 
+            if (states[this.id].airport) {
+                me.airport += 1
+            }
+
             me.grow = me.special * me.port * 0.5
 
             socket.emit('refresh', playerMap)
@@ -275,15 +313,26 @@ async function game() {
 
 function preload() {
     customize()
-    chat()  
+    chat()
 }
 
 function cursor() {
-    $(document).on('mouseover', 'path', (e) => {
+    $(document).on('mousemove', 'path', (e) => {
         $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})`)
-        $(document).mousemove(e => {
-            $('#cursor').css('left', e.pageX).css('top', e.pageY)
-            $(e.target).css('cursor', 'none')
+        $('#cursor').css('left', e.pageX).css('top', e.pageY)
+    })
+
+    $(document).on('mouseenter', 'path', e => {
+        states[e.target.id].neighbors.forEach(idx => {
+            if (e.target.id == idx) return
+            if ($(`#${idx}`).hasClass('occupied')) return
+            $(`#${idx}`).addClass('neighbor')
+        })
+    })
+
+    $(document).on('mouseleave', 'path', e => {
+        states[e.target.id].neighbors.forEach(idx => {
+            $(`#${idx}`).removeClass('neighbor')
         })
     })
 }
@@ -291,6 +340,7 @@ function cursor() {
 let states = []
 let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
 let ports = [50, 121, 181, 28, 185, 165, 204]
+let airports = [139, 234, 119, 135, 16, 43]
 
 $(document).ready(() => {
     game()

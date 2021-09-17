@@ -81,12 +81,25 @@ button#skip {
     fill: aquamarine !important;
 }
 
+
 .special {
     fill: #ffedb8 !important;
 }
 
 .port {
     fill: #a9f !important;
+}
+
+.airport {
+    fill: #bafdff !important;
+}
+
+.fog {
+    fill: gray !important;
+}
+
+.neighbor {
+    fill: aquamarine !important;
 }
 
 #states path {
