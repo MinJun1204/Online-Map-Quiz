@@ -318,8 +318,8 @@ function preload() {
 
 function cursor() {
     $(document).on('mousemove', 'path', (e) => {
-        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})`)
-        $('#cursor').css('left', e.pageX).css('top', e.pageY)
+        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})${stateNeighborEmoji(states[e.target.id])}`)
+        $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
     })
 
     $(document).on('mouseenter', 'path', e => {
@@ -335,6 +335,13 @@ function cursor() {
             $(`#${idx}`).removeClass('neighbor')
         })
     })
+}
+
+function stateNeighborEmoji(state) {
+    if (state.special) return "🎁"
+    if (state.port) return "🚢"
+    if (state.airport) return "✈️"
+    return ""
 }
 
 let states = []
