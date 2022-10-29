@@ -1,56 +1,160 @@
+let socket = io()
+let server
+let myId
+
+const url = './geojson/SIG.geojson'
+
 let players = []
 let playerMap = {}
-let myId
 let second, minute
 
-function Player(id, color, nickname) {
-    this.id = id
-    this.nickname = nickname
-    this.color = color
-    this.occupied = []
-    this.neighbors = new Set()
-    this.inSight = new Set()
-    this.score = 0
-    this.special = 0
-    this.port = 0
-    this.airport = 0
-    this.airportScore = 0
-    this.grow = 0
+let states = []
+let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
+let ports = [50, 121, 181, 28, 185, 165, 204]
+let airports = [139, 234, 119, 135, 16, 43]
+
+class Server {
+    players = []
+    playerMap = {}
+
+    constructor(players, states) {
+        this.players = players
+        this.states = states
+        this.round = 0
+        this.turn = 0
+
+        console.log('[Server Created]')
+    }
+
+    set players(players) { this.players = players }
+    get players() { return this.players }
+    
+    set playerMap(playerMap) { this.playerMap = playerMap }
+    get playerMap() { return this.playerMap }
+
+    addPlayer(player) {
+        this.players.push(player)
+        this.playerMap[player.id] = player
+    }
+
+    nextRound() { round++ }
+    
+    nextTurn() {
+        if (this.turn == 0) this.turn++
+        else {
+            this.turn = 0
+            this.round++
+        }
+    }
 }
 
-function State(name, population, color, neighbors) {
-    this.name = name
-    this.population = population
-    this.color = color
-    this.neighbors = neighbors
+class Player {
+    constructor(id, color, nickname) {
+        this.id = id
+        this.nickname = nickname
+        this.color = color
+        this.occupied = []
+        this.neighbors = new Set()
+        this.inSight = new Set()
+        this.score = 0
+        this.special = 0
+        this.port = 0
+        this.airport = 0
+        this.airportScore = 0
+        this.grow = 0
+    }
+}
+
+class State {
+    constructor(name, population, color, neighbors, facilities) {
+        this.name = name
+        this.population = population
+        this.color = color
+        this.neighbors = neighbors
+        this.facilities = facilities
+    }
+}
+
+/* Main Function */
+$(document).ready(async () => {
+    server = createServer()
+    game()
+    preload()
+
+    checkUpdate()
+
+    let toggle = false
+
+    $('#population').click(() => {
+        if (toggle) {
+            $('path').css('fill', '#ffffff')
+            toggle = true
+        } else {
+            states.forEach((element, idx) => $(`#${idx}`).css('fill', `rgb(${255 - parseInt(element.population / 3400)}, 255, 255)`))
+            toggle = false
+        }
+    })
+})
+
+function createServer() {
+    let server = new Server([], [])
+
+    return server
+}
+
+function checkUpdate() {
+    socket.on('update', (server) => {
+        server = server
+        console.log('[Update]', server)
+    })
+}
+
+function update() {
+    socket.emit('update', server)
 }
 
 function joinUser(id, color, nickname) {
     let player = new Player(id, color, nickname)
 
-    players.push(player)
-    playerMap[id] = player
+    server.addPlayer(player)
+    update()
 
-    return player
+    // players.push(player)
+    // playerMap[id] = player
+
+    // return player
 }
 
 function leaveUser(id) {
-    for (let i = 0; i < players.length; i++) {
-        if (players[i].id == id) {
-            players.splice(i, 1)
+    // for (let i = 0; i < players.length; i++) {
+    //     if (players[i].id == id) {
+    //         players.splice(i, 1)
+    //         break
+    //     }
+    //     delete playerMap[id]
+    // }
+
+    let playerList = server.players
+    for (let i = 0; i < playerList.length; i++) {
+        if (playerList[i].id == id) {
+            playerList.splice(i, 1)
             break
         }
-        delete playerMap[id]
+        delete server.playerMap[id]
     }
+    update()
 }
 
-let socket = io()
 
+/* User Management */
+
+// Get My ID
 socket.on('userId', (data) => {
     myId = data
     console.log('My ID :', myId)
 })
 
+// Join User
 socket.on('joinUser', (data) => {
     if (data.id == myId) {
         $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} (나) : 0 / 0 (0%)</li>`)
@@ -62,10 +166,9 @@ socket.on('joinUser', (data) => {
     joinUser(data.id, data.color, data.nickname)
 })
 
+// Leave User
 socket.on('leaveUser', (id) => leaveUser(id))
 
-let url = '/geojson/SIG.geojson'
-// let url = '/geojson/US States.geojson'
 function getMapData(url) {
     return new Promise((resolve, reject) => {
         $.getJSON(url, (response) => {
@@ -91,12 +194,25 @@ function parseMapData(data) {
     return states
 }
 
+/* UI */
+function preload() {
+    customize()
+    chat()
+    cursor()
+}
+
 function customize() {
     $('#customize').submit((e) => {
         e.preventDefault()
-        if ($('#nickname').val()) {
-            socket.emit('customize', myId, $('#nickname').val(), $('#color').val())
-            $('#customize').hide()
+        let nickname = $('#nickname').val()
+        let color = $('#color').val()
+
+        if (nickname) {
+            server.playerMap[myId].nickname = nickname
+            server.playerMap[myId].color = color
+            update()
+
+            $('section:has(#customize)').hide()
         } else {
             alert('닉네임을 입력하세요')
         }
@@ -114,6 +230,27 @@ function chat() {
 
     $('#clear').click(() => {
         $('#messages *').hide()
+    })
+}
+
+function cursor() {
+    $(document).on('mousemove', 'path', (e) => {
+        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})${stateNeighborEmoji(states[e.target.id])}`)
+        $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
+    })
+
+    $(document).on('mouseenter', 'path', e => {
+        states[e.target.id].neighbors.forEach(idx => {
+            if (e.target.id == idx) return
+            if ($(`#${idx}`).hasClass('occupied')) return
+            $(`#${idx}`).addClass('neighbor')
+        })
+    })
+
+    $(document).on('mouseleave', 'path', e => {
+        states[e.target.id].neighbors.forEach(idx => {
+            $(`#${idx}`).removeClass('neighbor')
+        })
     })
 }
 
@@ -311,58 +448,9 @@ async function game() {
     })
 }
 
-function preload() {
-    customize()
-    chat()
-}
-
-function cursor() {
-    $(document).on('mousemove', 'path', (e) => {
-        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})${stateNeighborEmoji(states[e.target.id])}`)
-        $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
-    })
-
-    $(document).on('mouseenter', 'path', e => {
-        states[e.target.id].neighbors.forEach(idx => {
-            if (e.target.id == idx) return
-            if ($(`#${idx}`).hasClass('occupied')) return
-            $(`#${idx}`).addClass('neighbor')
-        })
-    })
-
-    $(document).on('mouseleave', 'path', e => {
-        states[e.target.id].neighbors.forEach(idx => {
-            $(`#${idx}`).removeClass('neighbor')
-        })
-    })
-}
-
 function stateNeighborEmoji(state) {
     if (state.special) return "🎁"
     if (state.port) return "🚢"
     if (state.airport) return "✈️"
     return ""
 }
-
-let states = []
-let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
-let ports = [50, 121, 181, 28, 185, 165, 204]
-let airports = [139, 234, 119, 135, 16, 43]
-
-$(document).ready(() => {
-    game()
-    cursor()
-    preload()
-
-    let toggle = false
-
-    $('#population').click(() => {
-        if (toggle) {
-            $('path').css('fill', '#ffffff')
-            toggle = true
-        } else {
-            states.forEach((element, idx) => $(`#${idx}`).css('fill', `rgb(${255 - parseInt(element.population / 3400)}, 255, 255)`))
-            toggle = false
-        }
-    })
-})

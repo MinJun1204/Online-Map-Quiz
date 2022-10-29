@@ -7,8 +7,8 @@ router.get('/', function(req, res) {
   res.render('index', { title: 'Online Map Quiz' })
 })
 
-router.get('/game', (req, res) => {
-  res.render('game')
+router.get('/lobby', (req, res) => {
+  res.render('lobby', { id: req.cookies.id })
 })
 
 router.post('/login', (req, res) => {
@@ -17,10 +17,6 @@ router.post('/login', (req, res) => {
 
 router.get('/logout', (req, res) => {
   res.clearCookie('id').redirect('/')
-})
-
-router.get('/lobby', (req, res) => {
-  res.render('lobby', { id: req.cookies.id })
 })
 
 router.get('/game', (req, res) => {

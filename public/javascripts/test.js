@@ -18,6 +18,7 @@ new Promise(function(resolve, reject){
 */
 
 function getData(cb) {
+  console.log(123)
     return new Promise((resolve, reject) => {
         $.getJSON('/geojson/SIG.geojson', (response) => {
             if (response) resolve(response)
@@ -39,7 +40,7 @@ async function getData() {
 
 function getJSON() {
   return new Promise((resolve, reject) => {
-    $.getJSON('/geojson/SIG.geojson', (response) => {
+    $.getJSON('geojson/SIG.geojson', (response) => {
         if (response) resolve(response)
         else reject(new Error('Request failed'))
     })
