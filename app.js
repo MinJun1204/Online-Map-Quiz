@@ -25,6 +25,9 @@ app.io.on('connection', (socket) => {
     socket.broadcast.emit('leaveUser', socket.id)
   })
 
+  // Logging
+  socket.on('log', message => app.io.emit('log', message))
+
   let newPlayer = joinGame(socket)
   socket.emit('userId', socket.id)
 

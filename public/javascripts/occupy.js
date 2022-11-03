@@ -1,6 +1,7 @@
 let socket = io()
 let server
 let myId
+let me
 
 const url = './geojson/SIG.geojson'
 
@@ -18,6 +19,7 @@ class Server {
     playerMap = {}
 
     constructor(players, states) {
+        this.isStarted = false
         this.players = players
         this.states = states
         this.round = 0
@@ -37,7 +39,7 @@ class Server {
         this.playerMap[player.id] = player
     }
 
-    nextRound() { round++ }
+    nextRound() { this.round++ }
     
     nextTurn() {
         if (this.turn == 0) this.turn++
@@ -57,27 +59,56 @@ class Player {
         this.neighbors = new Set()
         this.inSight = new Set()
         this.score = 0
-        this.special = 0
-        this.port = 0
-        this.airport = 0
+        this.population = 0
+        this.facilities = {
+            special: 0,
+            port: 0,
+            airport: 0
+        }
         this.airportScore = 0
         this.grow = 0
+    }
+
+    occupyState(state) {
+        state.owner = me
+        me.occupied.push(state)
+        log(`[Occupied] ${state.name} (${state.id}) : ${me.nickname}`)
+
+        if (state.facilities.special) me.facilities.special++
+        else if (state.facilities.port) me.facilities.port++
+        else if (state.facilities.airport) me.facilities.airport++
+
+        this.population += state.population
     }
 }
 
 class State {
-    constructor(name, population, color, neighbors, facilities) {
+    constructor(id, name, population, color, neighbors, facilities) {
+        this.id = id
         this.name = name
         this.population = population
         this.color = color
         this.neighbors = neighbors
-        this.facilities = facilities
+        this.facilities = {
+            special: false,
+            port: false,
+            airport: false
+        }
+        this.owner = null
+    }
+
+    addFacility(facility) {
+        this.facilities[facility] = true
     }
 }
 
 /* Main Function */
 $(document).ready(async () => {
-    server = createServer()
+    // 서버 사이드 체크 구현 필요
+    if (!server) server = await createServer()
+    else 
+    
+    setting()
     game()
     preload()
 
@@ -96,10 +127,34 @@ $(document).ready(async () => {
     })
 })
 
-function createServer() {
+async function createServer() {
     let server = new Server([], [])
 
     return server
+}
+
+async function setting() {
+    let data = await getMapData(url)
+    server.states = parseMapData(data)
+
+    me = server.playerMap[myId]
+
+    special.forEach(e => {
+        server.states[e].addFacility('special')
+        $(`#${e}`).addClass('special')
+    })
+
+    ports.forEach(e => {
+        server.states[e].addFacility('port')
+        $(`#${e}`).addClass('port')
+    })
+
+    airports.forEach(e => {
+        server.states[e].addFacility('airport')
+        $(`#${e}`).addClass('airport')
+    })
+
+    console.log('States :', server.states)
 }
 
 function checkUpdate() {
@@ -147,20 +202,19 @@ function leaveUser(id) {
 
 
 /* User Management */
-
 // Get My ID
-socket.on('userId', (data) => {
-    myId = data
+socket.on('userId', (id) => {
+    myId = id
     console.log('My ID :', myId)
 })
 
 // Join User
 socket.on('joinUser', (data) => {
-    if (data.id == myId) {
-        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} (나) : 0 / 0 (0%)</li>`)
-    } else {
-        $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} : 0 / 0 (0%)</li>`)
-    }
+    // if (data.id == myId) {
+    //     $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} (나) : 0 / 0 (0%)</li>`)
+    // } else {
+    //     $('#players').append(`<li id="${data.id}" style="font-weight: bold; color: ${data.color}">${data.nickname} : 0 / 0 (0%)</li>`)
+    // }
 
     console.log('[Join User]', data)
     joinUser(data.id, data.color, data.nickname)
@@ -169,6 +223,7 @@ socket.on('joinUser', (data) => {
 // Leave User
 socket.on('leaveUser', (id) => leaveUser(id))
 
+/* Map Parsing */
 function getMapData(url) {
     return new Promise((resolve, reject) => {
         $.getJSON(url, (response) => {
@@ -186,7 +241,7 @@ function parseMapData(data) {
         let state = element.properties
         let neighbors = state.neighbors.split(',').map(item => parseInt(item))
         
-        states[state.id] = new State(state.state, parseInt(state.population), `#${parseInt(state.population / 3500).toString(16)}ffff`, neighbors)
+        states[state.id] = new State(state.id, state.state, parseInt(state.population), `#${parseInt(state.population / 3500).toString(16)}ffff`, neighbors)
     })
     // features.forEach(element => arr.push(`#${parseInt(element.properties.population / 3500).toString(16)}ffff`))
     // features.forEach((element, idx) => console.log(`${element.properties.state} (${element.properties.population}): rgb(${255 - parseInt(element.properties.population / 3400)}, 255, 255)`))
@@ -235,12 +290,12 @@ function chat() {
 
 function cursor() {
     $(document).on('mousemove', 'path', (e) => {
-        $('#cursor').css('display', 'auto').text(`${states[e.target.id].name} (${states[e.target.id].population})${stateNeighborEmoji(states[e.target.id])}`)
+        $('#cursor').css('display', 'auto').text(`${server.states[e.target.id].name} (${server.states[e.target.id].population})${stateNeighborEmoji(server.states[e.target.id])}`)
         $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
     })
 
     $(document).on('mouseenter', 'path', e => {
-        states[e.target.id].neighbors.forEach(idx => {
+        server.states[e.target.id].neighbors.forEach(idx => {
             if (e.target.id == idx) return
             if ($(`#${idx}`).hasClass('occupied')) return
             $(`#${idx}`).addClass('neighbor')
@@ -248,10 +303,17 @@ function cursor() {
     })
 
     $(document).on('mouseleave', 'path', e => {
-        states[e.target.id].neighbors.forEach(idx => {
+        server.states[e.target.id].neighbors.forEach(idx => {
             $(`#${idx}`).removeClass('neighbor')
         })
     })
+}
+
+function stateNeighborEmoji(state) {
+    if (state.facilities.special) return "🎁"
+    if (state.facilities.port) return "🚢"
+    if (state.facilities.airport) return "✈️"
+    return ""
 }
 
 function timeUpdate() {
@@ -263,7 +325,16 @@ function timeUpdate() {
     $('#timer').text(`${minute}:${second}`)
 }
 
+/* Logging */
+function log(message) {
+    socket.emit('log', message)
+}
+
+socket.on('log', message => console.log(message))
+
 async function game() {
+    server.isStarted = true
+
     $('header, main, #question').hide()
     $('#colorpicker').farbtastic('#color')
 
@@ -292,26 +363,6 @@ async function game() {
     let opScore = 0
     let order = 0
     let myTurn = true
-
-    let data = await getMapData(url)
-    states = parseMapData(data)
-
-    special.forEach(e => {
-        states[e].special = true
-        $(`#${e}`).addClass('special')
-    })
-
-    ports.forEach(e => {
-        states[e].port = true
-        $(`#${e}`).addClass('port')
-    })
-
-    airports.forEach(e => {
-        states[e].airport = true
-        $(`#${e}`).addClass('airport')
-    })
-
-    console.log('States :', states)
 
     $('#start').click(() => {
         socket.emit('start', states)
@@ -403,54 +454,57 @@ async function game() {
         $('#turn').hide()
     })
 
+    // Occupy by Click
     $(document).on('click', 'path', function(){
-        let me = playerMap[myId]
-        
-        if (myTurn == true) {
-            order++
+        let stateId = this.id
+        let state = server.states[stateId]
 
-            console.log(`[Clicked] ${this.id} / Order ${order}`)
-
-            me.occupied.push(parseInt(this.id))
-            me.score += states[this.id].population
-            // me.score += states[this.id].population
-
-            if (states[this.id].special) {
-                me.special += 1
-                // me.score *= 1.1
-                // me.score = parseInt(me.score)
-
-                if (states[this.id].name === '의성') {
-                    alert(`<의성 마늘>\n신웅이 신령스러운 쑥 한 타래와 마늘 20개를 주면서 이르기를 “너희들이 이것을 먹고 백일 동안 햇빛을 보지 아니하면 곧 사람이 될 것이다.”라고 하였다.\n\n-삼국유사-\n\n내가 가진 모든 도시에 턴당 생산 점수 +2% 부여`)
-                }
-            }
-
-            if (states[this.id].port) {
-                me.port += 1
-            }
-
-            if (states[this.id].airport) {
-                me.airport += 1
-            }
-
-            me.grow = me.special * me.port * 0.5
-
-            socket.emit('refresh', playerMap)
-
-            $('#turn').hide()
-
-            if (order == 2) {
-                myTurn = false
-                order = 0
-                socket.emit('turnEnd')
-            }
+        if (state.owner == null) {
+            me.occupyState(state)
+            server.nextTurn()
         }
+
+        // let me = playerMap[myId]
+        
+        // if (myTurn == true) {
+        //     order++
+
+        //     console.log(`[Clicked] ${this.id} / Order ${order}`)
+
+        //     me.occupied.push(parseInt(this.id))
+        //     me.score += states[this.id].population
+        //     // me.score += states[this.id].population
+
+        //     if (states[this.id].special) {
+        //         me.special += 1
+        //         // me.score *= 1.1
+        //         // me.score = parseInt(me.score)
+
+        //         if (states[this.id].name === '의성') {
+        //             alert(`<의성 마늘>\n신웅이 신령스러운 쑥 한 타래와 마늘 20개를 주면서 이르기를 “너희들이 이것을 먹고 백일 동안 햇빛을 보지 아니하면 곧 사람이 될 것이다.”라고 하였다.\n\n-삼국유사-\n\n내가 가진 모든 도시에 턴당 생산 점수 +2% 부여`)
+        //         }
+        //     }
+
+        //     if (states[this.id].port) {
+        //         me.port += 1
+        //     }
+
+        //     if (states[this.id].airport) {
+        //         me.airport += 1
+        //     }
+
+        //     me.grow = me.special * me.port * 0.5
+
+        //     socket.emit('refresh', playerMap)
+
+        //     $('#turn').hide()
+
+        //     if (order == 2) {
+        //         myTurn = false
+        //         order = 0
+        //         socket.emit('turnEnd')
+        //     }
+        // }
     })
 }
 
-function stateNeighborEmoji(state) {
-    if (state.special) return "🎁"
-    if (state.port) return "🚢"
-    if (state.airport) return "✈️"
-    return ""
-}
