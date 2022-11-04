@@ -105,8 +105,23 @@ class State {
 /* Main Function */
 $(document).ready(async () => {
     // 서버 사이드 체크 구현 필요
-    if (!server) server = await createServer()
-    else 
+    console.log('check')
+    socket.emit('checkServer', response => {
+        console.log('[Check Server]', response)
+
+        server = response
+    })
+
+    if (server == null) {
+        console.log('Server Not Exists')
+        server = await createServer()
+        console.log(server)
+    } else {
+        console.log('Server Already Exists')
+        server = await response
+    }
+
+    console.log('check end')
     
     setting()
     game()
@@ -129,6 +144,7 @@ $(document).ready(async () => {
 
 async function createServer() {
     let server = new Server([], [])
+    socket.emit('createServer', server)
 
     return server
 }
@@ -455,6 +471,10 @@ async function game() {
     })
 
     // Occupy by Click
+    occupy()
+}
+
+function occupy() {
     $(document).on('click', 'path', function(){
         let stateId = this.id
         let state = server.states[stateId]
@@ -507,4 +527,3 @@ async function game() {
         // }
     })
 }
-

@@ -20,7 +20,7 @@ router.get('/logout', (req, res) => {
 })
 
 router.get('/game', (req, res) => {
-  res.render('game')
+  res.render('game', { id: req.cookies.id })
 })
 
 module.exports = router;
