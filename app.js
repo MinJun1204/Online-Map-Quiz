@@ -12,19 +12,11 @@ let qNum
 let qNumList = []
 let count = 0
 
+let server = null
+
 app.io = require('socket.io')()
 
 app.io.on('connection', (socket) => {
-  // Connected
-  console.log(`[Connected] ${socket.id}`)
-
-  // Disconnected
-  socket.on('disconnect', () => {
-    console.log(`[Disconnected] ${socket.id}`)
-    endGame(socket)
-    socket.broadcast.emit('leaveUser', socket.id)
-  })
-
   let newPlayer = joinGame(socket)
   socket.emit('userId', socket.id)
 
@@ -37,10 +29,42 @@ app.io.on('connection', (socket) => {
     })
   }
 
+  // Connected
+  console.log(`[Connected] ${socket.id}`)
+  console.log('[Server]', server)
+
+  // Disconnected
+  socket.on('disconnect', () => {
+    console.log(`[Disconnected] ${socket.id}`)
+    endGame(socket)
+    socket.broadcast.emit('leaveUser', socket.id)
+  })
+
+  // Logging
+  socket.on('log', message => app.io.emit('log', message))
+
+  
+
   socket.broadcast.emit('joinUser', {
     id: socket.id,
     color: newPlayer.color
   })
+
+  
+  // Create Server
+  socket.on('createServer', s => {
+    server = s
+
+    console.log('[Server Created]', server)
+  })
+
+  // Check Server
+  socket.on('checkServer', cb => {
+    cb(server)
+  })
+
+  // Check Server
+  socket.on('checkServer', () => socket.emit('checkServer', 1))
 
   // Game Update
   socket.on('update', server => socket.broadcast.emit('update', server))
@@ -56,17 +80,13 @@ app.io.on('connection', (socket) => {
   // Chatting
   socket.on('chat', (id, msg) => app.io.emit('chat', id, msg))
 
-  socket.on('test', (msg) => {
-    app.io.emit('test', msg)
-  })
-
   socket.on('start', (states) => {
     qNumList = []
     count = 0
     newQuestion(states)
 
     console.log('Game Start')
-    console.log(states)
+    // console.log(states)
     app.io.emit('start')
   })
 
@@ -84,7 +104,7 @@ app.io.on('connection', (socket) => {
 
   socket.on('refresh', (id, index) => app.io.emit('refresh', id, index))
 
-  console.log(playerMap)
+  // console.log(playerMap)
 })
 
 function getPlayerColor() {
