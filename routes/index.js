@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 router.get('/', function(req, res) {
-  if (req.cookies.id != undefined) res.redirect('/lobby')
+  if (req.cookies.id) res.redirect('/lobby')
 
   res.render('index', { title: 'Online Map Quiz' })
 })
@@ -19,8 +19,11 @@ router.get('/logout', (req, res) => {
   res.clearCookie('id').redirect('/')
 })
 
-router.get('/game', (req, res) => {
-  res.render('game', { id: req.cookies.id })
+router.get('/game/:gameId', (req, res) => {
+  let gameId = req.params.gameId
+  console.log('[Game Entered]', gameId)
+
+  res.render('game', { id: req.cookies.id, gameId: gameId })
 })
 
 module.exports = router;

@@ -11,11 +11,31 @@ block content
 
     button#enter 게임 입장
 
-    div(id="red", style="width: 200px; height: 200px; background-color: red")
-    div(id="green", style="width: 200px; height: 200px; background-color: green")
+    hr
+
+    h2 방 목록
+    ul#rooms
+
+    hr
+    section#createRoom
+        h2 방 만들기
+        form
+            label(for="roomTitle") 방 제목
+            input(id="roomTitle", name="title")
+            input(type="submit", value="생성")
+
 
     script.
+        let socket = io()
+        let rooms
+
+        if (socket) console.log('Socket Connected')
+
         $(document).ready(() => {
+            checkRooms()
+            createRoom()
+            enterRoom()
+
             $('#logout').click(() => location.href = '/logout')
             $('#enter').click(() => location.href = '/game')
 
@@ -23,3 +43,33 @@ block content
                 console.log('enter', e.target.id)
             })
         })
+
+        function checkRooms() {
+            socket.emit('checkRooms', response => {
+                rooms = response
+                console.log('[Rooms]', rooms)
+
+                $('#rooms').empty()
+                for (let i in rooms) {
+                    $('#rooms').append(`<li class="room", id='${rooms[i].id}'>${rooms[i].id} | ${rooms[i].title}</li>`)
+                }
+            })
+        }
+
+        function createRoom() {
+            $('#createRoom form').submit(e => {
+                e.preventDefault()
+
+                let roomTitle = $('#roomTitle').val()
+                socket.emit('createRoom', roomTitle, response => {
+                    console.log('Room Created:', response)
+                    checkRooms()
+                })
+            })
+        }
+
+        function enterRoom() {
+            $('#rooms').on('click', 'li', function() {
+                location.href = './game/' + this.id
+            })
+        }

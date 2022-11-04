@@ -3,7 +3,7 @@ let server
 let myId
 let me
 
-const url = './geojson/SIG.geojson'
+const url = '/geojson/SIG.geojson'
 
 let players = []
 let playerMap = {}
@@ -107,26 +107,25 @@ class State {
 
 /* Main Function */
 $(document).ready(async () => {
-    server = createServer()
-    setting()
+    server = await createServer()
     // 서버 사이드 체크 구현 필요
-    console.log('check')
-    socket.emit('checkServer', response => {
-        console.log('[Check Server]', response)
+    // console.log('check')
+    // socket.emit('checkServer', response => {
+    //     console.log('[Check Server]', response)
 
-        server = response
-    })
+    //     server = response
+    // })
 
-    if (server == null) {
-        console.log('Server Not Exists')
-        server = await createServer()
-        console.log(server)
-    } else {
-        console.log('Server Already Exists')
-        server = await response
-    }
+    // if (server == null) {
+    //     console.log('Server Not Exists')
+    //     server = await createServer()
+    //     console.log(server)
+    // } else {
+    //     console.log('Server Already Exists')
+    //     server = await response
+    // }
 
-    console.log('check end')
+    // console.log('check end')
     
     setting()
     preload()

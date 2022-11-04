@@ -174,3 +174,12 @@ section {
     background-color: white;
     text-align: center;
 }
+
+.room:hover {
+    cursor: pointer;
+    background-color: #F5F5F5;
+}
+
+.room:active {
+    background-color: #F0F0F0;
+}

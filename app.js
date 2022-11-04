@@ -14,7 +14,10 @@ let count = 0
 
 let server = null
 
+let rooms = []
+
 app.io = require('socket.io')()
+app.set('io', app.io)
 
 app.io.on('connection', (socket) => {
   let newPlayer = joinGame(socket)
@@ -28,6 +31,19 @@ app.io.on('connection', (socket) => {
       nickname: player.nickname
     })
   }
+
+  // Check Room List
+  socket.on('checkRooms', cb => cb(rooms))
+
+  // Create Room
+  socket.on('createRoom', (roomTitle, cb) => {
+    let roomId = Math.floor(Math.random() * 900) + 100
+
+    console.log(`[Room Created] ${roomTitle} (${roomId})`)
+    rooms.push({ id: roomId, title: roomTitle })
+
+    cb(rooms)
+  })
 
   // Connected
   console.log(`[Connected] ${socket.id}`)
@@ -189,6 +205,11 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
+
+app.use((req, res, next) => {
+  req.io = app.io
+  next()
+})
 
 app.use('/', indexRouter)
 
