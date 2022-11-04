@@ -215,6 +215,7 @@ function updateUI() {
 /* User Management */
 
 function joinUser(id, color, nickname) {
+    nickname = document.cookie.split('=')[1]
     let player = new Player(id, color, nickname)
 
     server.addPlayer(player)
@@ -247,10 +248,10 @@ function leaveUser(id) {
 }
 
 // Get My ID
-socket.on('userId', (id) => {
-    myId = id
-    console.log('My ID :', myId)
-})
+// socket.on('userId', (id) => {
+//     myId = id
+//     console.log('My ID :', myId)
+// })
 
 // Join User
 socket.on('joinUser', (data) => {
@@ -261,6 +262,8 @@ socket.on('joinUser', (data) => {
     // }
 
     console.log('[Join User]', data)
+    myId = data.id
+    console.log('My ID :', myId)
     joinUser(data.id, data.color, data.nickname)
 })
 

@@ -23,7 +23,7 @@ router.get('/game/:gameId', (req, res) => {
   let gameId = req.params.gameId
   console.log('[Game Entered]', gameId)
 
-  res.render('game', { id: req.cookies.id, gameId: gameId })
+  res.render('game', { nickname: req.cookies.id, gameId: gameId })
 })
 
 module.exports = router;

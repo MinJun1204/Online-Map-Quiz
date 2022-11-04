@@ -21,7 +21,7 @@ app.set('io', app.io)
 
 app.io.on('connection', (socket) => {
   let newPlayer = joinGame(socket)
-  socket.emit('userId', socket.id)
+  // socket.emit('userId', socket.id)
 
   for (let i = 0; i < players.length; i++) {
     let player = players[i]
