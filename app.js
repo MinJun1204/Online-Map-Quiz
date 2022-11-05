@@ -7,6 +7,23 @@ var logger = require('morgan')
 var indexRouter = require('./routes/index')
 
 var app = express()
+app.io = require('socket.io')()
+app.set('io', app.io)
+
+app.io.on('connection', socket => {
+  console.log('[User Connected]', socket.id)
+
+  let Server = require('./modules/server.js')(socket)
+  // let Rooms = require('./modules/rooms')
+  // let Game = require('./modules/game.js')
+  let Player = require('./modules/player')
+  let State = require('./modules/state')
+
+  let player = new Player()
+  let state = new State()
+})
+
+
 
 let qNum
 let qNumList = []
@@ -16,9 +33,7 @@ let server = null
 
 let rooms = []
 
-app.io = require('socket.io')()
-app.set('io', app.io)
-
+/*
 app.io.on('connection', (socket) => {
   let newPlayer = joinGame(socket)
   // socket.emit('userId', socket.id)
@@ -68,10 +83,10 @@ app.io.on('connection', (socket) => {
 
   
   // Create Server
-  socket.on('createServer', s => {
-    server = s
+  socket.on('createGame', g => {
+    game = g
 
-    console.log('[Server Created]', server)
+    console.log('[Server Created]', game)
   })
 
   // Check Server
@@ -122,12 +137,13 @@ app.io.on('connection', (socket) => {
 
   // console.log(playerMap)
 })
+*/
 
 function getPlayerColor() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16)
 }
 
-class Player {
+class _Player {
   constructor(socket) {
     this.socket = socket
     this.color = getPlayerColor()
@@ -142,7 +158,7 @@ let players = []
 let playerMap = {}
 
 function joinGame(socket) {
-  let player = new Player(socket)
+  let player = new _Player(socket)
 
   players.push(player)
   playerMap[socket.id] = player

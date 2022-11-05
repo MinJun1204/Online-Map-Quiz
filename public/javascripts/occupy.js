@@ -1,5 +1,5 @@
 let socket = io()
-let server
+let game
 let myId
 let me
 
@@ -14,18 +14,19 @@ let special = [126, 242, 159, 162, 146, 198, 190, 179, 172, 248, 235, 215, 217]
 let ports = [50, 121, 181, 28, 185, 165, 204]
 let airports = [139, 234, 119, 135, 16, 43]
 
-class Server {
+class Game {
     players = []
     playerMap = {}
 
-    constructor(players, states) {
+    constructor() {
         this.isStarted = false
-        this.players = players
-        this.states = states
+        this.players = []
+        this.states = []
         this.round = 0
         this.turn = 0
 
-        console.log('[Server Created]')
+        socket.emit('createGame', this)
+        console.log('[Game Created]')
     }
 
     set players(players) { this.players = players }
@@ -33,6 +34,14 @@ class Server {
     
     set playerMap(playerMap) { this.playerMap = playerMap }
     get playerMap() { return this.playerMap }
+
+    init() {
+
+    }
+
+    preload() {
+
+    }
 
     addPlayer(player) {
         this.players.push(player)
@@ -107,7 +116,10 @@ class State {
 
 /* Main Function */
 $(document).ready(async () => {
-    server = await createServer()
+    enterRoom()
+    // game = await createGame()
+    game = new Game([], [])
+
     // 서버 사이드 체크 구현 필요
     // console.log('check')
     // socket.emit('checkServer', response => {
@@ -129,7 +141,7 @@ $(document).ready(async () => {
     
     setting()
     preload()
-    game()
+    start()
 
     checkUpdate()
 
@@ -146,11 +158,17 @@ $(document).ready(async () => {
     })
 })
 
-async function createServer() {
-    let server = new Server([], [])
-    socket.emit('createServer', server)
+function enterRoom() {
+    socket.emit('enterRoom', gameId, response => {
+        console.log(`[${socket.id}] Entered Room ${response}`)
+    })
+}
 
-    return server
+async function createGame() {
+    let game = new Game([], [])
+    socket.emit('createGame', game)
+
+    return game
 }
 
 async function setting() {
@@ -175,37 +193,37 @@ async function setting() {
 
     // Load Map
     let data = await getMapData(url)
-    server.states = parseMapData(data)
-    me = server.playerMap[myId]
+    game.states = parseMapData(data)
+    me = game.playerMap[myId]
 
     special.forEach(e => {
-        server.states[e].addFacility('special')
+        game.states[e].addFacility('special')
         $(`#${e}`).addClass('special')
     })
 
     ports.forEach(e => {
-        server.states[e].addFacility('port')
+        game.states[e].addFacility('port')
         $(`#${e}`).addClass('port')
     })
 
     airports.forEach(e => {
-        server.states[e].addFacility('airport')
+        game.states[e].addFacility('airport')
         $(`#${e}`).addClass('airport')
     })
 
-    console.log('States :', server.states)
+    console.log('States :', game.states)
 }
 
 function checkUpdate() {
-    socket.on('update', (server) => {
-        server = server
+    socket.on('update', (game) => {
+        game = game
         updateUI()
-        console.log('[Update]', server)
+        console.log('[Update]', game)
     })
 }
 
 function update() {
-    socket.emit('update', server)
+    socket.emit('update', game)
 }
 
 function updateUI() {
@@ -218,7 +236,7 @@ function joinUser(id, color, nickname) {
     nickname = document.cookie.split('=')[1]
     let player = new Player(id, color, nickname)
 
-    server.addPlayer(player)
+    game.addPlayer(player)
     update()
 
     // players.push(player)
@@ -236,13 +254,13 @@ function leaveUser(id) {
     //     delete playerMap[id]
     // }
 
-    let playerList = server.players
+    let playerList = game.players
     for (let i = 0; i < playerList.length; i++) {
         if (playerList[i].id == id) {
             playerList.splice(i, 1)
             break
         }
-        delete server.playerMap[id]
+        delete game.playerMap[id]
     }
     update()
 }
@@ -311,8 +329,8 @@ function customize() {
 
         // Set Nickname
         if (nickname) {
-            server.playerMap[myId].nickname = nickname
-            server.playerMap[myId].color = color
+            game.playerMap[myId].nickname = nickname
+            game.playerMap[myId].color = color
             update()
 
             $('section:has(#customize)').hide()
@@ -338,13 +356,13 @@ function chat() {
 
 function cursor() {
     $(document).on('mousemove', 'path', (e) => {
-        let state = server.states[e.target.id]
+        let state = game.states[e.target.id]
         $('#cursor').css('display', 'auto').text(`${state.name} (${state.population})${stateNeighborEmoji(state)}`)
         $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
     })
 
     $(document).on('mouseenter', 'path', e => {
-        let state = server.states[e.target.id]
+        let state = game.states[e.target.id]
         state.neighbors.forEach(idx => {
             if (e.target.id == idx) return
             if ($(`#${idx}`).hasClass('occupied')) return
@@ -353,7 +371,7 @@ function cursor() {
     })
 
     $(document).on('mouseleave', 'path', e => {
-        let state = server.states[e.target.id]
+        let state = game.states[e.target.id]
         state.neighbors.forEach(idx => {
             $(`#${idx}`).removeClass('neighbor')
         })
@@ -383,8 +401,8 @@ function log(message) {
 
 socket.on('log', message => console.log(message))
 
-async function game() {
-    server.isStarted = true
+async function start() {
+    game.isStarted = true
 
     $('header, main, #question').hide()
     $('#colorpicker').farbtastic('#color')
@@ -512,11 +530,11 @@ async function game() {
 function occupy() {
     $(document).on('click', 'path', function(){
         let stateId = this.id
-        let state = server.states[stateId]
+        let state = game.states[stateId]
 
         if (state.owner == null) {
             me.occupyState(state)
-            server.nextTurn()
+            game.nextTurn()
         }
 
         // let me = playerMap[myId]
