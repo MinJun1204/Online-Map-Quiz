@@ -116,9 +116,9 @@ class State {
 
 /* Main Function */
 $(document).ready(async () => {
-    enterRoom()
+    
     // game = await createGame()
-    game = new Game([], [])
+    // game = new Game([], [])
 
     // 서버 사이드 체크 구현 필요
     // console.log('check')
@@ -139,6 +139,8 @@ $(document).ready(async () => {
 
     // console.log('check end')
     
+/*
+
     setting()
     preload()
     start()
@@ -156,20 +158,18 @@ $(document).ready(async () => {
             toggle = false
         }
     })
+
+*/
 })
 
-function enterRoom() {
-    socket.emit('enterRoom', gameId, response => {
-        console.log(`[${socket.id}] Entered Room ${response}`)
-    })
-}
-
+/*
 async function createGame() {
     let game = new Game([], [])
     socket.emit('createGame', game)
 
     return game
 }
+*/
 
 async function setting() {
     $('header, main, #question').hide()

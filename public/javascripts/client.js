@@ -1,3 +1,11 @@
 let Client = {}
 
-// Client.socket = io()
+$(document).ready(async function() {
+    checkUpdate()
+
+    enterRoom()
+    addPlayer()
+    gameStart()
+
+
+})

@@ -3,7 +3,7 @@ extends layout
 block content
   #cursor
 
-  section
+  //- section
     form#customize
       label 닉네임 입력 : 
       input#nickname(placeholder="닉네임")
@@ -23,7 +23,8 @@ block content
             td 지도
             td 기록
             td 일시
-  section#settings
+
+  //- section#settings
     label(for="modeSelect") 모드 : 
     select#modeSelect
       option 지역 맞추기
@@ -48,9 +49,6 @@ block content
         option 오세아니아 
         option 아프리카
         option 미국 주 [48]
-
-    br
-    button#start START
   
   header
     h3#question
@@ -61,6 +59,7 @@ block content
 
     button#population 인구 뷰
     button#skip SKIP
+    button#start START
     br
 
   main
@@ -74,7 +73,7 @@ block content
       button#send 보내기
 
   script.
-    const nickname = '#{id}'
+    const nickname = '#{nickname}'
     const gameId = '#{gameId}'
 
   script(src="/javascripts/d3.js")
@@ -82,7 +81,7 @@ block content
   //- script(src="/javascripts/game.js")
   script(src="/javascripts/occupy.js")
   script(src="/javascripts/game.js")
-  scrtip(src="/javascripts/client.js")
+  script(src="/javascripts/client.js")
   //- script(src="/javascripts/solo.js")
 
   // Plugins

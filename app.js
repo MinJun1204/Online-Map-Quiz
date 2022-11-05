@@ -10,17 +10,20 @@ var app = express()
 app.io = require('socket.io')()
 app.set('io', app.io)
 
+let Server = require('./modules/server.js')
+// let Rooms = require('./modules/rooms')
+// let Game = require('./modules/game.js')
+let Player = require('./modules/player')
+let State = require('./modules/state')
+
+let server = new Server()
+let player = new Player()
+let state = new State()
+
 app.io.on('connection', socket => {
   console.log('[User Connected]', socket.id)
 
-  let Server = require('./modules/server.js')(socket)
-  // let Rooms = require('./modules/rooms')
-  // let Game = require('./modules/game.js')
-  let Player = require('./modules/player')
-  let State = require('./modules/state')
-
-  let player = new Player()
-  let state = new State()
+  server.listen(socket, app.io)
 })
 
 
@@ -28,8 +31,6 @@ app.io.on('connection', socket => {
 let qNum
 let qNumList = []
 let count = 0
-
-let server = null
 
 let rooms = []
 

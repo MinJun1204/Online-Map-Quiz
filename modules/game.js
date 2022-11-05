@@ -1,5 +1,6 @@
 class Game {
-    constructor() {
+    constructor(gameId) {
+        this.gameId = gameId,
         this.players = [],
         this.playerMap = {},
         this.isStarted = false,
@@ -7,7 +8,7 @@ class Game {
         this.turn = 0
         
         // socket.emit('createGame', this)
-        console.log('[Server] Game Created')
+        console.log('[Game Created]', gameId)
     }
 
     addPlayer(player) {
