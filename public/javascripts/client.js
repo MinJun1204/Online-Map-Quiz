@@ -3,9 +3,7 @@ const socket = io()
 let myId
 let game
 
-$(document).ready(async function() {
-    checkUpdate()
-
+$(document).ready(function() {
     init()
     onGame()
 })

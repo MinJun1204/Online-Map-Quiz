@@ -16,7 +16,7 @@ class State {
 
     addFacility(facility) {
         if (this.facilities[facility] == true)
-            alert(`${facility} already constructed`)
+            console.log(`${facility} already constructed`)
         else this.facilities[facility] = true
     }
 }

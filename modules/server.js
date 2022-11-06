@@ -13,9 +13,11 @@ class Server {
         else return game
     }
 
-    update(gameId, io) {
+    getPlayer(game, id) { return game.playerMap[id] }
+
+    update(gameId, io, msg) {
         let game = this.getGame(gameId)
-        io.to(gameId).emit('update', game)
+        io.to(gameId).emit('update', game, msg)
         console.log('[Server Update]')
     }
 
@@ -47,7 +49,7 @@ class Server {
             cb(gameId)
             
             let game = this.getGame(gameId)
-            console.log('[Game]', game)
+            console.log('[Player Entered a Room]')
         })
 
         // Register a Player to the Game
@@ -57,7 +59,7 @@ class Server {
             let player = new Player(socket.id, nickname, color)
 
             game.addPlayer(player)
-            console.log('[Player Added]', game)
+            console.log('[Player Added]', nickname)
             cb('Added')
         })
 
@@ -67,6 +69,8 @@ class Server {
             game.isStarted = true
 
             io.to(gameId).emit('start')
+            console.log('Start', gameId)
+            this.update(gameId, io, 'Game Start')
         })
 
         // Update All Clients
@@ -77,6 +81,16 @@ class Server {
         // Update Individual Client
         socket.on('updateEach', (gameId) => {
             this.updateEach(gameId, socket)
+        })
+
+        // Occupy a State
+        socket.on('occupy', (gameId, myId, stateId) => {
+            let game = this.getGame(gameId)
+            let player = this.getPlayer(game, myId)
+            player.occupyState(game, stateId)
+
+            this.update(gameId, io)
+            console.log('[Occupy]', gameId, player.nickname, stateId)
         })
     }
 }

@@ -1,18 +1,12 @@
 const url = '/geojson/SIG.geojson'
 
-function init() {
+async function init() {
     enterRoom()
-    addPlayer()
+    await addPlayer()
     getMyId()
 
+    checkUpdate()
     gameStart()
-}
-
-function getMyId() {
-    socket.emit('getMyId', (response) => {
-        myId = response
-        me = game.playerMap[myId]
-    })
 }
 
 function enterRoom() {
@@ -22,17 +16,24 @@ function enterRoom() {
 }
 
 function addPlayer() {
-    socket.emit('addPlayer', gameId, nickname, async (res) => {
-        update()
-        console.log('[Player Registered]', game)
+    return new Promise((resolve, reject) => {
+        socket.emit('addPlayer', gameId, nickname, async (res) => {
+            await update()
+            resolve()
+            console.log('[Player Registered]')
+        })
+    })
+}
+
+function getMyId() {
+    socket.emit('getMyId', (response) => {
+        myId = response
+        me = game.playerMap[myId]
+        console.log('[My ID]', myId)
     })
 }
 
 function gameStart() {
+    socket.once('start', () => { $('#start').hide() })
     $('#start').click(() => socket.emit('start', gameId))
-    socket.on('start', () => {
-        $('#start').hide()
-        console.log('[Game Started]')
-        updateEach()
-    })
 }
