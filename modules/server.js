@@ -38,6 +38,9 @@ class Server {
             })
         })
 
+        // Return Client's Socket ID
+        socket.on('getMyId', (cb) => cb(socket.id))
+
         // Enter the Room
         socket.once('enterRoom', (gameId, cb) => {
             socket.join(gameId)

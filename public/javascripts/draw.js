@@ -105,7 +105,6 @@ function drawMap(target) {
         return 'translate(' + arr + ')';
     }
 
-    
     function zoom() {
         projection.translate(d3.event.translate).scale(d3.event.scale);
         states.selectAll('path').attr('d', path);

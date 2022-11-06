@@ -1,23 +1,5 @@
-function enterRoom() {
-    socket.emit('enterRoom', gameId, res => {
-        console.log('[Server] Joined Room', res)
-    })
-}
-
-function addPlayer() {
-    socket.emit('addPlayer', gameId, nickname, async (res) => {
-        update()
-        console.log('[Player Registered]', game)
-    })
-}
-
-function gameStart() {
-    $('#start').click(() => socket.emit('start', gameId))
-    socket.on('start', () => {
-        $('#start').hide()
-        console.log('[Game Started]')
-        updateEach()
-    })
+function onGame() {
+    occupy()
 }
 
 function update() {
@@ -33,5 +15,18 @@ function checkUpdate() {
         game = _game
         console.log('[Update]', game)
         // socket.removeAllListeners('update')
+    })
+}
+
+function occupy() {
+    $(document).on('click', 'path', function(){
+        let stateId = this.id
+        let state = game.states[stateId]
+
+        console.log(state)
+        if (state.owner == null) {
+            me.occupyState(state)
+            game.nextTurn()
+        }
     })
 }
