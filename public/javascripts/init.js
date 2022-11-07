@@ -1,4 +1,4 @@
-const url = '/geojson/SIG.geojson'
+const url = '/geojson/newSIG.geojson'
 
 async function init() {
     enterRoom()

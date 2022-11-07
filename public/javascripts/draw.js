@@ -47,9 +47,9 @@ function drawMap(target) {
 
     //geoJson데이터를 파싱하여 지도그리기
         // let map = '/geojson/AL_00_D001_20210703/AL_00_D001_20210703(EMD)/Incheon (EMD).geojson'
-        let map = '/geojson/SIG.geojson'
+        // let map = '/geojson/newSIG.geojson'
         // let map = '/geojson/US States.geojson'
-        d3.json(map, function(json) {
+        d3.json(url, function(json) {
         // d3.json('/geojson/AL_00_D001_20210703/AL_00_D001_20210703(SIG)/Without Gu.geojson', function(json) {
         // d3.json('/geojson/Asia.geojson', function(json) {
         // d3.json('geojson/korea.json', function(json) {
