@@ -29,7 +29,13 @@ function getMyId() {
     socket.emit('getMyId', (response) => {
         myId = response
         me = game.playerMap[myId]
-        console.log('[My ID]', myId)
+        
+        let i = 0
+        for (let player of game.players) {
+            if (player.id === myId) myOrder = i
+            i++
+        }
+        console.log('[My ID]', myId, myOrder)
     })
 }
 

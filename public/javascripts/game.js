@@ -22,12 +22,25 @@ function checkUpdate() {
         game = _game
         console.log('[Update]', msg, game)
         // socket.removeAllListeners('update')
+
+        for (let state of game.states) {
+            if (!state) continue
+
+            if (state.owner) {
+                $('#' + state.id)
+                    .removeClass('fog')
+                    .css({ 'fill': state.owner.color })
+            }
+        }
     })
 }
 
 function occupy() {
-    $(document).on('click', 'path', function(){
+    $(document).on('click', 'path', function() {
+        if (game.turn !== myOrder) return
+
         let stateId = parseInt(this.id)
+     
         let state = game.states[stateId]
 
         console.log(state)

@@ -1,5 +1,6 @@
 class Player {
-    constructor(id, nickname, color) {
+    constructor(id, nickname, color, defaultCost, game) {
+        this.game = game
         this.id = id
         this.nickname = nickname
         this.color = color
@@ -8,6 +9,8 @@ class Player {
         // this.inSight = new Set()
         // this.score = 0
         this.population = 0
+        this.defaultCost = defaultCost
+        this.cost = defaultCost
         this.facilities = {
             special: 0,
             port: 0,
@@ -30,7 +33,8 @@ class Player {
         if (state.facilities.port) this.facilities.port++
         if (state.facilities.airport) this.facilities.airport++
 
-        game.nextTurn()
+        this.cost -= 2
+        if (this.cost < 2) game.nextTurn()
 
         // log(`[Occupied] ${state.name} (${state.id}) : ${me.nickname}`)
 

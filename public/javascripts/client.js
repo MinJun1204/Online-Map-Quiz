@@ -1,6 +1,6 @@
 let Client = {}
 const socket = io()
-let myId
+let myId, myOrder
 let game
 
 $(document).ready(function() {

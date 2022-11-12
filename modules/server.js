@@ -55,8 +55,9 @@ class Server {
         // Register a Player to the Game
         socket.on('addPlayer', (gameId, nickname, cb) => {
             let game = this.getGame(gameId)
-            let color = getPlayerColor()
-            let player = new Player(socket.id, nickname, color)
+            const color = getPlayerColor()
+            const defaultCost = 8
+            let player = new Player(socket.id, nickname, color, defaultCost)
 
             game.addPlayer(player)
             console.log('[Player Added]', nickname)
@@ -89,7 +90,7 @@ class Server {
             let player = this.getPlayer(game, myId)
             player.occupyState(game, stateId)
 
-            this.update(gameId, io)
+            this.update(gameId, io, 'Occupy')
             console.log('[Occupy]', gameId, player.nickname, stateId)
         })
     }
