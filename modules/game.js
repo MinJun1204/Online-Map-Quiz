@@ -65,6 +65,12 @@ class Game {
         else {
             this.turn = 0
             this.round++
+
+            for (let id in this.playerMap) {
+                let player = this.playerMap[id]
+
+                player.cost += player.defaultCost
+            }
         }
     }
 }
