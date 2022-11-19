@@ -56,7 +56,7 @@ class Server {
         socket.on('addPlayer', (gameId, nickname, cb) => {
             let game = this.getGame(gameId)
             const color = getPlayerColor()
-            const defaultCost = 8
+            const defaultCost = 6
             let player = new Player(socket.id, nickname, color, defaultCost)
 
             game.addPlayer(player)
@@ -92,6 +92,20 @@ class Server {
 
             this.update(gameId, io, 'Occupy')
             console.log('[Occupy]', gameId, player.nickname, stateId)
+        })
+
+        // Chatting
+        socket.on('chat', (msg) => {
+            io.emit('chat', socket.id, msg)
+        })
+
+        // Turn Skip
+        socket.on('skip', (gameId) => {
+            console.log('[Turn Skip]', gameId)
+            let game = this.getGame(gameId)
+            game.nextTurn()
+
+            this.update(gameId, io, 'Turn Skip')
         })
     }
 }

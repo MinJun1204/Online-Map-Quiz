@@ -57,7 +57,7 @@ block content
     h3#turn 내 턴
     ul#players
 
-    button#population 인구 뷰
+    //- button#population 인구 뷰
     button#skip SKIP
     button#start START
     br
@@ -69,8 +69,8 @@ block content
     ul#messages
     form(id="chat", action="")
       input(autocomplete="off")
-      button#clear CLEAR
       button#send 보내기
+    button#clear CLEAR
 
   script.
     const nickname = '#{nickname}'
