@@ -66,11 +66,17 @@ block content
     #container
 
   nav
-    ul#messages
-    form(id="chat", action="")
-      input(autocomplete="off")
-      button#clear CLEAR
-      button#send 보내기
+    section#panel
+      #stateInfo
+        p#stateName
+        p#statePopulation
+
+    section#chatting
+      ul#messages
+      form(id="chat", action="")
+        input(autocomplete="off")
+        button#clear CLEAR
+        button#send 보내기
 
   script.
     const nickname = '#{nickname}'

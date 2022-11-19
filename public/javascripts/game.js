@@ -1,4 +1,7 @@
 function onGame() {
+    cursor()
+    chat()
+
     occupy()
 }
 
@@ -23,15 +26,7 @@ function checkUpdate() {
         console.log('[Update]', msg, game)
         // socket.removeAllListeners('update')
 
-        for (let state of game.states) {
-            if (!state) continue
-
-            if (state.owner) {
-                $('#' + state.id)
-                    .removeClass('fog')
-                    .css({ 'fill': state.owner.color })
-            }
-        }
+        updateUI()
     })
 }
 
@@ -48,4 +43,56 @@ function occupy() {
             socket.emit('occupy', gameId, myId, stateId)
         }
     })
+}
+
+function updateUI() {
+    for (let state of game.states) {
+        if (!state) continue
+
+        if (state.owner) {
+            $('#' + state.id)
+                .removeClass('fog')
+                .css({ 'fill': state.owner.color })
+
+            for (let neighbor of state.neighbors) {
+                $('#' + neighbor)
+                    .removeClass('fog')
+            }
+        }
+    }
+}
+
+function cursor() {
+    $(document).on('mousemove', 'path', (e) => {
+        let state = game.states[e.target.id]
+        $('#cursor').css('display', 'auto').text(`${state.name} (${state.population})${stateNeighborEmoji(state)}`)
+        $('#cursor').css('left', e.pageX + 15).css('top', e.pageY)
+    })
+
+    $(document).on('mouseenter', 'path', e => {
+        let state = game.states[e.target.id]
+        state.neighbors.forEach(idx => {
+            if (e.target.id == idx) return
+            if ($(`#${idx}`).hasClass('occupied')) return
+            $(`#${idx}`).addClass('neighbor')
+        })
+    })
+
+    $(document).on('mouseleave', 'path', e => {
+        let state = game.states[e.target.id]
+        state.neighbors.forEach(idx => {
+            $(`#${idx}`).removeClass('neighbor')
+        })
+    })
+}
+
+function stateNeighborEmoji(state) {
+    if (state.facilities.special) return "🎁"
+    if (state.facilities.port) return "🚢"
+    if (state.facilities.airport) return "✈️"
+    return ""
+}
+
+function chat() {
+    
 }
